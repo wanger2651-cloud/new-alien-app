@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>在线客服</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .loading, .error {
+      box-sizing: border-box;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      padding: 24px;
+      text-align: center;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .error { color: #c00; }
+  </style>
+</head>
+<body>
+  <div id="status" class="loading">正在打开在线客服...</div>
+  <script src="https://o.alicdn.com/mecloud/shell/dialog.js"></script>
+  <script>
+    (function () {
+      var statusEl = document.getElementById('status');
+      function setError(text) {
+        if (statusEl) {
+          statusEl.className = 'error';
+          statusEl.textContent = text;
+        }
+      }
+
+      var search = new URLSearchParams(location.search || '');
+      var from = search.get('from') || 'HJPLG95C6N';
+
+      if (typeof window.AlimeDialog !== 'function') {
+        setError('客服脚本加载失败，请检查网络后重试');
+        return;
+      }
+
+      try {
+        window.AlimeDialog({ from: from });
+        if (statusEl) statusEl.style.display = 'none';
+      } catch (err) {
+        setError('客服窗口打开失败，请稍后重试');
+        console.error('AlimeDialog error:', err);
+      }
+    })();
+  </script>
+</body>
+</html>

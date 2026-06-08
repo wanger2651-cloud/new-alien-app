@@ -1,0 +1,446 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+		}
+	},
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/login/chooseUser",
+			"authRequired": false,
+			"title": "选择身份",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, 
+		// 商家版已移除，注释掉商家版 tabBar 相关页面配置
+		// {
+		// 	"path": "pages/shop/shop",
+		// 	"style": {
+		// 		"navigationBarTitleText": "门店",
+		// 		"navigationStyle": "custom",
+		// 		"disableScroll": true,
+		// 		"enablePullDownRefresh": false,
+		// 		"app-plus": {
+		// 			"popGesture": "none"
+		// 		}
+		// 	}
+		// }, {
+		// 	"path": "pages/teach/teach",
+		// 	"style": {
+		// 		"navigationBarTitleText": "视频教学",
+		// 		"navigationStyle": "custom",
+		// 		"app-plus": {
+		// 			"popGesture": "none"
+		// 		}
+		// 	}
+		// }, {
+		// 	"path": "pages/information/information",
+		// 	"style": {
+		// 		"navigationBarTitleText": "消息",
+		// 		"navigationStyle": "custom",
+		// 		"app-plus": {
+		// 			"popGesture": "none"
+		// 		}
+		// 	}
+		// }, {
+		{
+			"path": "pages/feedback/feedback",
+			"style": {
+				"navigationBarTitleText": "意见反馈",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/feedback/admin-feedback",
+			"style": {
+				"navigationBarTitleText": "后台反馈",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		},
+		// }, {
+		// 	"path": "pages/user/user",
+		// 	"style": {
+		// 		"navigationBarTitleText": "我的",
+		// 		"navigationStyle": "custom",
+		// 		"app-plus": {
+		// 			"popGesture": "none"
+		// 		}
+		// 	}
+		// }, {
+		{
+			"path": "pages/login/merchantLogin",
+			"style": {
+				"navigationBarTitleText": "商家登录",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/login/register",
+			"style": {
+				"navigationBarTitleText": "注册",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/login/forgetPassword",
+			"style": {
+				"navigationBarTitleText": "忘记密码",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/shop-management/shop-management",
+			"authRequired": false,
+			"title": "店铺管理",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/shop-management/task-query",
+			"authRequired": false,
+			"title": "任务查询",
+			"style": {
+				"navigationStyle": "custom",
+				"disableScroll": true,
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/pjss-web/pjss-web",
+			"authRequired": false,
+			"title": "评价申诉配置",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/integral/integral",
+			"style": {
+				"navigationBarTitleText": "积分管理",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/service/service",
+			"authRequired": false,
+			"title": "IM智能客服",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/aggregated-service/aggregated-service",
+			"authRequired": false,
+			"title": "聚合客服",
+			"style": {
+				"navigationStyle": "custom",
+				"disableScroll": true,
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/aggregated-service/message-manage",
+			"authRequired": false,
+			"title": "消息管理",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/aggregated-service/session-detail",
+			"authRequired": false,
+			"title": "会话详情",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none",
+					"softinputMode": "adjustPan"
+				}
+			}
+		}, {
+			"path": "pages/aggregated-service/shop-manage",
+			"authRequired": false,
+			"title": "店铺管理",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/aggregated-service/service-manage",
+			"authRequired": false,
+			"title": "客服管理",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/aggregated-service/workbench",
+			"authRequired": false,
+			"title": "工作台",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/out-food/out-food",
+			"authRequired": false,
+			"title": "出餐设置",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/answer-msg/answer-msg",
+			"authRequired": false,
+			"title": "自动回评",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/smart-gold/smart-gold",
+			"authRequired": false,
+			"title": "自动竞价",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, 
+		// 菜品美化页面已注释，功能入口已移除
+		// {
+		// 	"path": "pages/beautify/beautify",
+		// 	"authRequired": false,
+		// 	"title": "菜品美化",
+		// 	"style": {
+		// 		"navigationStyle": "custom",
+		// 		"app-plus": {
+		// 			"popGesture": "none"
+		// 		}
+		// 	}
+		// }, {
+		{
+			"path": "pages/smart-pic/smart-pic",
+			"authRequired": false,
+			"title": "智能换图",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/high-light/high-light",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/wx-push/wx-push",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/wechatsetting/wechatsetting",
+			"authRequired": false,
+			"title": "微信推送设置",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}, {
+			"path": "pages/wechatsetting/wechatsetting-config",
+			"authRequired": false,
+			"title": "推送内容设置",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		},
+		{
+		    "path": "uni_modules/hic-upgrade/pages/upgrade",
+		    "style": {
+		        "navigationBarTitleText": "版本更新",
+		        "navigationStyle": "custom",                // 取消本页面的导航栏
+		        "backgroundColor": "transparent",
+		        "disableScroll": true,
+		        "app-plus": {
+		            "background": "transparent",            // 背景透明
+		            "scrollIndicator": "none",              // 不显示滚动条
+		            "animationType": "fade-in",
+		            "animationDuration": 200,
+		            "popGesture": "none"                    // 关闭IOS屏幕左边滑动关闭当前页面的功能
+		        }
+		    }
+		},
+		// {
+		// 	"path": "pages/master/master",
+		// 	"authRequired": false,
+		// 	"title": "首页",
+		// 	"style": {
+		// 		"navigationStyle": "custom"
+		// 	}
+		// },
+		{
+			"path": "pages/master-index/master-index",
+			"authRequired": false,
+			"title": "首页",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/manage/manage",
+			"authRequired": false,
+			"title": "门店管理",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/group/group",
+			"authRequired": false,
+			"title": "分组管理",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		},
+		// {
+		// 	"path": "pages/app-center/app-center",
+		// 	"authRequired": false,
+		// 	"title": "应用中心",
+		// 	"style": {
+		// 		"navigationStyle": "custom"
+		// 	}
+		// },
+		// {
+		// 	"path": "pages/storeManage/storeManage",
+		// 	"title": "外卖涨单宝",
+		// 	"style": {
+		// 		"navigationBarTitleText": "",
+		// 		"navigationStyle": "custom"
+		// 	}
+		// },
+		// {
+		// 	"path": "pages/user/index",
+		// 	"title": "个人中心",
+		// 	"style": {
+		// 		"navigationBarTitleText": ""
+		// 	}
+		// },
+		{
+			"path": "pages/user/nodeChild",
+			"authRequired": false,
+			"title": "子账号管理",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "none"
+				}
+			}
+		}
+
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8",
+		"app-plus": {
+			"popGesture": "none"
+		}
+	},
+	// 商家版已移除，注释掉 tabBar 配置（商家版专属）
+	// "tabBar": {
+	// 	"color": "#7A7E83",
+	// 	"selectedColor": "#FACC05",
+	// 	"borderStyle": "black",
+	// 	"backgroundColor": "#ffffff",
+	// 	"height": "70px",
+	// 	"fontSize": "13px",
+	// 	"iconWidth": "24px",
+	// 	"spacing": "7px",
+	// 	"iconfontSrc": "static/iconfont.ttf", // app tabbar 字体.ttf文件路径 app 3.4.4+
+	// 	"list": [{
+	// 		"pagePath": "pages/shop/shop",
+	// 		"iconPath": "static/tabIcon/md.png",
+	// 		"selectedIconPath": "static/tabIcon/icon-002.png",
+	// 		"text": "门店"
+	// 	}, {
+	// 		"pagePath": "pages/teach/teach",
+	// 		"iconPath": "static/tabIcon/jx.png",
+	// 		"selectedIconPath": "static/tabIcon/icon-005.png",
+	// 		"text": "教学"
+	// 	}, {
+	// 		"pagePath": "pages/information/information",
+	// 		"iconPath": "static/tabIcon/xx.png",
+	// 		"selectedIconPath": "static/tabIcon/icon-003.png",
+	// 		"text": "消息"
+	// 	}, {
+	// 		"pagePath": "pages/user/user",
+	// 		"iconPath": "static/tabIcon/user.png",
+	// 		"selectedIconPath": "static/tabIcon/icon-004.png",
+	// 		"text": "我的"
+	// 	}]
+	// },
+	"uniIdRouter": {}
+}
