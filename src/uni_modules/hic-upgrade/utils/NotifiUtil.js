@@ -11,7 +11,8 @@ if (baseConfig.notify && baseConfig.NotificationConfig) {
  */
 class NotificationCustom {
 	constructor() {
-		if (plus.os.name != 'Android') {
+		// 鸿蒙 / H5 等环境没有 5+ Runtime，避免模块加载时访问 plus 导致 app-service 崩溃白屏
+		if (typeof plus === 'undefined' || !plus.os || plus.os.name !== 'Android') {
 			return;
 		}
 		// 当前版本号

@@ -1,3 +1,35 @@
 {
-    "prompt" : "template"
+    "version": "1",
+    "prompt": "template",
+    "title": "服务协议和隐私政策",
+    "message": "请你务必审慎阅读、充分理解「用户服务协议」和「隐私政策」各条款，包括但不限于：为了向你提供门店管理、消息通知等功能，我们需要收集你的设备信息、账号信息等。你可阅读<a href=\"http://qingning-website.obs-website.cn-southwest-2.myhuaweicloud.com/terms.html\">《用户服务协议》</a>和<a href=\"http://qingning-website.obs-website.cn-southwest-2.myhuaweicloud.com/privacy.html\">《隐私政策》</a>了解详细信息。如你同意，请点击「同意」开始使用。",
+    "buttonAccept": "同意",
+    "buttonRefuse": "暂不同意",
+    "hrefLoader": "system",
+    "backToExit": "false",
+    "second": {
+        "title": "确认提示",
+        "message": "进入应用前，你需先同意<a href=\"http://qingning-website.obs-website.cn-southwest-2.myhuaweicloud.com/terms.html\">《用户服务协议》</a>和<a href=\"http://qingning-website.obs-website.cn-southwest-2.myhuaweicloud.com/privacy.html\">《隐私政策》</a>，否则将退出应用。",
+        "buttonAccept": "同意并继续",
+        "buttonRefuse": "退出应用"
+    },
+    "disagreeMode": {
+        "support": false,
+        "loadNativePlugins": false,
+        "visitorEntry": false,
+        "showAlways": false
+    },
+    "styles": {
+        "backgroundColor": "#ffffff",
+        "borderRadius": "5px",
+        "title": {
+            "color": "#333333"
+        },
+        "buttonAccept": {
+            "color": "#1677ff"
+        },
+        "buttonRefuse": {
+            "color": "#999999"
+        }
+    }
 }

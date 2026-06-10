@@ -2,23 +2,23 @@
     "name" : "青柠助手",
     "appid" : "__UNI__CABEF04",
     "description" : "青柠助手",
-    "versionName" : "1.0.3",
-    "versionCode" : 103,
+    "versionName" : "1.0.12",
+    "versionCode" : 112,
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
         "usingComponents" : true,
         "nvueStyleCompiler" : "uni-app",
         "compilerVersion" : 3,
-        "debug" : false, // 开启基础调试
-        "vconsole" : false, // 启用 vConsole
+        "debug" : false,
+        "vconsole" : false,
 
         // 隐藏软键盘上方的导航条（包含 上一项 / 下一项 / 完成 按钮）
         // 避免在聊天页面中占据额外高度，遮挡自定义的消息编辑栏
         "softinputNavBar" : "none",
         "splashscreen" : {
-            "alwaysShowBeforeRender" : true,
-            "waiting" : true,
+            "alwaysShowBeforeRender" : false,
+            "waiting" : false,
             "autoclose" : true,
             "delay" : 0,
             "kernel" : {
@@ -132,9 +132,13 @@
     "mp-weixin" : {
         "appid" : "",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true,
+            "postcss" : true
         },
         "usingComponents" : true,
+        "lazyCodeLoading" : "requiredComponents",
         "uniStatistics" : {
             "enable" : false
         }
@@ -218,6 +222,9 @@
             "deviceTypes" : [ "phone", "tablet" ],
             "targetSdkVersion" : "6.0.0(20)",
             "compatibleSdkVersion" : "6.0.0(20)",
+            "splashScreens" : {
+                "startWindowBackground" : "#C8E6E0"
+            },
             "signingConfigs" : {}
         }
     },

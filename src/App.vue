@@ -16,7 +16,9 @@
 	
 	onLaunch(() => {
 		// console.log("App Launch");
+		// #ifdef APP-PLUS
 		versionUpdate(true);
+		// #endif
 		
 		// #ifdef APP-PLUS
 		// 全局禁用iOS左滑返回手势
@@ -63,4 +65,20 @@
 	::-webkit-scrollbar {
 		display: none;
 	}
+
+	/* #ifdef MP-WEIXIN */
+	page {
+		background-color: #f9f9f9;
+		color: #333;
+		font-size: 28rpx;
+		line-height: 1.5;
+		box-sizing: border-box;
+	}
+
+	view,
+	text,
+	image {
+		box-sizing: border-box;
+	}
+	/* #endif */
 </style>

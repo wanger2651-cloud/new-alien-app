@@ -1,6 +1,8 @@
 # Logs
 logs
 *.log
+hilog-dump.txt
+runtime-hilog*.txt
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -21,3 +23,14 @@ dist
 *.njsproj
 *.sln
 *.sw?
+
+# Harmony / uni-app build outputs
+unpackage
+harmony-native/.hvigor
+harmony-native/**/build
+harmony-native/**/.preview
+harmony-native/oh_modules
+harmony-native/node_modules
+harmony-native/entry/src/main/resources/resfile
+harmony-native/signing/
+harmony-native/local.properties

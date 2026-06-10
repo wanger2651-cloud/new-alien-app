@@ -4,8 +4,14 @@ import Components from 'unplugin-vue-components/vite'
 import UnoCSS from 'unocss/vite'
 import { resolve } from 'path';
 // https://vitejs.dev/config/
+const isMpWeixin = process.env.UNI_PLATFORM === 'mp-weixin'
+
 export default defineConfig({
-  plugins: [uni(),UnoCSS(),Components({})],
+  plugins: [
+    UnoCSS(),
+    uni(),
+    ...(isMpWeixin ? [] : [Components({})]),
+  ],
   server: {
   		proxy: {
   			'/api': {

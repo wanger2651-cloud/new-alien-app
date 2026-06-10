@@ -1,0 +1,85 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "./signing/qingning_release.p12",
+          "storePassword": "0000001f64c25dffd72f623d261965ea128430bbce9fe6e4cd3b30aa5c5a491693237e89a5443d01ab29f49ce0bd55",
+          "keyAlias": "qingning_release",
+          "keyPassword": "0000001f64c25dffd72f623d261965ea128430bbce9fe6e4cd3b30aa5c5a491693237e89a5443d01ab29f49ce0bd55",
+          "signAlg": "SHA256withECDSA",
+          "profile": "./signing/qingning_release.p7b",
+          "certpath": "./signing/qingning_release.cer"
+        }
+      },
+      {
+        "name": "release",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "./signing/qingning_release.p12",
+          "storePassword": "0000001f64c25dffd72f623d261965ea128430bbce9fe6e4cd3b30aa5c5a491693237e89a5443d01ab29f49ce0bd55",
+          "keyAlias": "qingning_release",
+          "keyPassword": "0000001f64c25dffd72f623d261965ea128430bbce9fe6e4cd3b30aa5c5a491693237e89a5443d01ab29f49ce0bd55",
+          "signAlg": "SHA256withECDSA",
+          "profile": "./signing/qingning_release.p7b",
+          "certpath": "./signing/qingning_release.cer"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "6.0.0(20)",
+        "compatibleSdkVersionStage": "beta6",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        },
+        "targetSdkVersion": "6.0.0(20)"
+      },
+      {
+        "name": "release",
+        "signingConfig": "release",
+        "compatibleSdkVersion": "6.0.0(20)",
+        "compatibleSdkVersionStage": "beta6",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        },
+        "targetSdkVersion": "6.0.0(20)"
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default",
+            "release"
+          ]
+        }
+      ]
+    }
+  ]
+}

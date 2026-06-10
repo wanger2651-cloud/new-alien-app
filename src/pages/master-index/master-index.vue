@@ -4,22 +4,21 @@
 			<text class="enc-switch-label">加密流量</text>
 			<wd-switch v-model="encApiEnabled" size="20px" active-color="#FACC05" @change="onEncApiSwitchChange" />
 		</view>
-		<view class="u-page">
-		<view v-cloak>
-			<component :is="Master" v-show="defaultIndex === 0" :defaultIndex="defaultIndex"></component>
-			<component :is="Manage" v-show="defaultIndex === 1"></component>
-			<component :is="WxPush" v-show="showWechatPushTab && defaultIndex === 2"></component>
-			<component :is="UserCenter" v-show="defaultIndex === effectiveUserTabIndex"></component>
+		<view class="tab-panel">
+			<Master v-show="activeTabKey === 'home'"></Master>
+			<Manage v-show="activeTabKey === 'manage'" :embedded-tab="true"></Manage>
+			<AggregatedService v-show="activeTabKey === 'aggregated'" :embedded-tab="true"></AggregatedService>
+			<WxPush v-show="activeTabKey === 'wxpush'"></WxPush>
+			<UserCenter v-show="activeTabKey === 'user'" :embedded-tab="true"></UserCenter>
 		</view>
-			<view class="tab-bar">
-				<view class="uni-tabbar-border">
-				</view>
-				<view class="tab-bar-item" v-for="(item, index) in tabbarList" :key="item.title" @click="toTabbar(item, index)">
-					<view class="tab-bar-item-main">
-					   <image :src="item.activeIcon" v-show="defaultIndex === index"></image>
-					   <image :src="item.icon" v-show="defaultIndex !== index"></image>
-					   <view class="tab-bar-title" :class="{'is-active': defaultIndex === index}">{{ item.title }}</view>
-					</view>
+		<view class="tab-bar">
+			<view class="uni-tabbar-border">
+			</view>
+			<view class="tab-bar-item" v-for="(item, index) in tabbarList" :key="item.title" @click="toTabbar(item, index)">
+				<view class="tab-bar-item-main">
+				   <image :src="item.activeIcon" v-show="defaultIndex === index"></image>
+				   <image :src="item.icon" v-show="defaultIndex !== index"></image>
+				   <view class="tab-bar-title" :class="{'is-active': defaultIndex === index}">{{ item.title }}</view>
 				</view>
 			</view>
 		</view>
@@ -34,13 +33,17 @@
 	} from '@dcloudio/uni-app';
 	import Master from "@/pages/master/master"
 	import Manage from "@/pages/storeManage/storeManage"
+	import AggregatedService from "@/pages/aggregated-service/aggregated-service"
 	import WxPush from "@/pages/wx-push/wx-push"
 	import UserCenter from "@/pages/user/index"
-	import { ref, computed } from "vue"
+	import { ref, computed, nextTick } from "vue"
 	import { UserApi } from '@/api/login'
 	import { getEncApiSwitchEnabled, setEncApiSwitchEnabled } from '@/utils/encApi.js'
+	import { notifyUserSessionChanged } from '@/utils/authSession'
 	const currentComponent  = ref('Manage')
 	const defaultIndex = ref(0)
+	/** 测试阶段隐藏首页，确认无问题后可改为 false 并删除 Master 相关代码 */
+	const showHomeTab = ref(false)
 
 	const statusBarHeight = ref(0)
 	const encAdminFlag = ref(false)
@@ -96,22 +99,33 @@
 	/** 设为 true 时恢复底部栏「微信推送」及对应内容与索引 */
 	const showWechatPushTab = ref(false)
 	const tabbarList = computed(() => {
-		const tabs = [
-			{
+		const tabs = []
+		if (showHomeTab.value) {
+			tabs.push({
+				key: 'home',
 				path: '/pages/master/master',
 				title: '首页',
 				icon: '/static/shop/icon_045a.png',
 				activeIcon: '/static/shop/icon_044a.png'
-			},
-			{
-				path: '/pages/manage/manage',
-				title: '门店管理',
-				icon: '/static/shop/icon_041a.png',
-				activeIcon: '/static/shop/icon_048a.png'
-			}
-		]
+			})
+		}
+		tabs.push({
+			key: 'manage',
+			path: '/pages/manage/manage',
+			title: '门店管理',
+			icon: '/static/shop/icon_041a.png',
+			activeIcon: '/static/shop/icon_048a.png'
+		})
+		tabs.push({
+			key: 'aggregated',
+			path: '/pages/aggregated-service/aggregated-service',
+			title: '聚合客服',
+			icon: '/static/user/jihu-logo.png',
+			activeIcon: '/static/user/jihu-logo.png'
+		})
 		if (showWechatPushTab.value) {
 			tabs.push({
+				key: 'wxpush',
 				path: '/pages/wx-push/wx-push',
 				title: '微信推送',
 				icon: '/static/shop/icon_051a.png',
@@ -119,6 +133,7 @@
 			})
 		}
 		tabs.push({
+			key: 'user',
 			path: '/pages/user/index',
 			title: '个人中心',
 			icon: '/static/shop/icon_043a.png',
@@ -126,25 +141,30 @@
 		})
 		return tabs
 	})
-	/** 当前布局下「个人中心」对应的 defaultIndex */
-	const effectiveUserTabIndex = computed(() =>
-		showWechatPushTab.value ? 3 : 2
-	)
+	const activeTabKey = computed(() => tabbarList.value[defaultIndex.value]?.key ?? 'manage')
 	
 	const toTabbar = (item, index) => {
-		currentComponent.value = item.name
+		currentComponent.value = item.key
 		defaultIndex.value = index
+		if (item.key === 'user') {
+			nextTick(() => notifyUserSessionChanged())
+		}
 	}
 
 	const normalizeDefaultIndexAfterTabLayout = (raw) => {
-		let n = raw
-		if (!Number.isFinite(n)) return n
-		// 曾含「店铺复制」的 5 栏语义（仅对可能来自旧链接的高位 index 收口）
-		if (n <= 1) {
-			return n
+		let idx = raw
+		if (!Number.isFinite(idx)) return idx
+		// 旧版含首页：0 首页 / 1 门店 / 2 微信或聚合 / 3 个人
+		if (showHomeTab.value) {
+			if (idx <= 1) return idx
+			if (idx === 2) return showWechatPushTab.value ? 2 : 1
+			return showWechatPushTab.value ? idx : idx - 1
 		}
-		if (n === 2) return 1
-		return n - 1
+		// 新版无首页：0 门店 / 1 聚合客服 / [2 微信] / N 个人
+		if (idx === 0) return 0
+		if (idx === 1) return 0
+		if (idx === 2) return showWechatPushTab.value ? 2 : 2
+		return showWechatPushTab.value ? idx : Math.max(0, idx - 1)
 	}
 	
 	onLoad((options) => {
@@ -157,11 +177,6 @@
 			}
 			if (Number.isFinite(idx)) {
 				idx = normalizeDefaultIndexAfterTabLayout(idx)
-				if (!showWechatPushTab.value) {
-					// 移除「微信推送」后：原为 [首页|门店|微信|个人]，index 3→个人；2→合并到门店
-					if (idx === 3) idx = 2
-					else if (idx === 2) idx = 1
-				}
 				const maxIndex = tabbarList.value.length - 1
 				defaultIndex.value = Math.max(0, Math.min(maxIndex, idx))
 			}
@@ -215,18 +230,18 @@
 		display: flex;
 		flex-direction: column;
 	}
-	.u-page {
+	.tab-panel {
 		flex: 1;
-		overflow-y: auto;
-		/* 为底部导航栏预留空间，避免内容被遮挡 */
-		padding-bottom: calc(70px + env(safe-area-inset-bottom));
-		box-sizing: border-box;
+		min-height: 0;
+		overflow: hidden;
+		position: relative;
 	}
 	.tab-bar {
+		flex-shrink: 0;
 		width: 100%;
 		height: 70px;
-		position: fixed;
-		bottom: env(safe-area-inset-bottom);
+		padding-bottom: env(safe-area-inset-bottom);
+		box-sizing: content-box;
 		display: flex;
 		background-color: #fff;
 		z-index: 100;

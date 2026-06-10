@@ -65,8 +65,35 @@ export const ENC_TEST_VECTOR = {
 	method: 'POST'
 }
 
-const textEncoder = new TextEncoder()
-const textDecoder = new TextDecoder()
+const resolveServiceGlobal = () => {
+	if (typeof uni !== 'undefined' && uni && typeof uni.requireGlobal === 'function') {
+		return uni.requireGlobal()
+	}
+	return typeof globalThis !== 'undefined' ? globalThis : {}
+}
+
+let textEncoder
+let textDecoder
+
+const getTextEncoder = () => {
+	if (!textEncoder) {
+		const GlobalTextEncoder = typeof TextEncoder !== 'undefined'
+			? TextEncoder
+			: resolveServiceGlobal().TextEncoder
+		textEncoder = new GlobalTextEncoder()
+	}
+	return textEncoder
+}
+
+const getTextDecoder = () => {
+	if (!textDecoder) {
+		const GlobalTextDecoder = typeof TextDecoder !== 'undefined'
+			? TextDecoder
+			: resolveServiceGlobal().TextDecoder
+		textDecoder = new GlobalTextDecoder()
+	}
+	return textDecoder
+}
 
 const numberToBytes = (value) => {
 	const buf = new ArrayBuffer(4)
@@ -95,7 +122,7 @@ const concatBytes = (...buffers) => {
 }
 
 const writeString = (parts, value) => {
-	const bytes = textEncoder.encode(value)
+	const bytes = getTextEncoder().encode(value)
 	parts.push(numberToBytes(bytes.length))
 	parts.push(bytes)
 }
@@ -105,7 +132,7 @@ const readString = (bytes, offsetRef) => {
 	offsetRef.value += 4
 	const valueBytes = bytes.slice(offsetRef.value, offsetRef.value + len)
 	offsetRef.value += len
-	return textDecoder.decode(valueBytes)
+	return getTextDecoder().decode(valueBytes)
 }
 
 const encodeRequestPayload = (payload) => {
@@ -231,13 +258,13 @@ export const objectToBytes = (input) => {
 	if (input === undefined || input === null) return new Uint8Array(0)
 	if (input instanceof ArrayBuffer) return new Uint8Array(input)
 	if (input instanceof Uint8Array) return input
-	if (typeof input === 'string') return textEncoder.encode(input)
-	return textEncoder.encode(JSON.stringify(input))
+	if (typeof input === 'string') return getTextEncoder().encode(input)
+	return getTextEncoder().encode(JSON.stringify(input))
 }
 
 export const bytesToJson = (input) => {
 	if (!input || input.length === 0) return null
-	const text = textDecoder.decode(input)
+	const text = getTextDecoder().decode(input)
 	return JSON.parse(text)
 }
 

@@ -1,14 +1,16 @@
 <template>
 	<view class="mLogin">
-		<wd-navbar left-text="返回" left-arrow @click-left="handleClickLeft"></wd-navbar>
+		<view class="top-bar" @tap="goLoginPage">
+			<text class="back-text">‹ 返回</text>
+		</view>
 		<view class="textOne">HI～ 您好！</view>
 		<view class="textTwo">输入信息找回密码</view>
 		<view class="phone">
-			<inputItem v-model:title="agencyRegVo.phone" placeholderText="请输入手机号"
+			<inputItem v-model:title="agencyRegVo.phone" type="phone" placeholderText="请输入手机号"
 				imgSrc="../../static/choose/phone.png" />
-			<inputItem v-model:title="agencyRegVo.p" placeholderText="请输入新密码" imgSrc="../../static/choose/mima.png" />
-			<inputItem v-model:title="agencyRegVo.p1" placeholderText="请再次输入密码" imgSrc="../../static/choose/mima.png" />
-			<inputItem v-model:title="agencyRegVo.gaCode" type="number" placeholderText="请输入谷歌验证器6位验证码"
+			<inputItem v-model:title="agencyRegVo.p" type="password" placeholderText="请输入新密码" imgSrc="../../static/choose/mima.png" />
+			<inputItem v-model:title="agencyRegVo.p1" type="password" placeholderText="请再次输入密码" imgSrc="../../static/choose/mima.png" />
+			<inputItem v-model:title="agencyRegVo.gaCode" type="digit" placeholderText="请输入谷歌验证器6位验证码"
 				imgSrc="../../static/choose/mima.png" @replaceStr="replaceGaCode" />
 		</view>
 		<view class="regBut" @click="confirmRequest">确认</view>
@@ -32,6 +34,7 @@
 	import {
 		HomeApi
 	} from '@/api/home';
+	import inputItem from '@/components/inputItem.vue';
 	const authStore = useAuthStore()
 	// 声明一个响应式对象
 	const agencyRegVo = reactive({
@@ -51,25 +54,17 @@
 		// pageFlag.value = e.peageFlag
 	})
 	
-	const handleClickLeft = () => {
-		// 返回到登录页面，使用 slide-in-left 动画（新页面从左侧滑入，当前页面向右滑出）
-		uni.navigateTo({
-			url: '/pages/login/merchantLogin?peageFlag=' + pageFlag.value,
-			animationType: 'slide-in-left',
-			animationDuration: 300
-		});
+	const goLoginPage = () => {
+		uni.redirectTo({ url: '/pages/login/merchantLogin?peageFlag=' + pageFlag.value })
 	}
-	
-	// 拦截系统返回键，返回到登录页面
+
 	onBackPress(() => {
-		handleClickLeft()
-		return true // 拦截默认返回行为
+		goLoginPage()
+		return true
 	})
 	
 	const toLogin = () => {
-		uni.navigateTo({
-			url: '/pages/login/merchantLogin?peageFlag=' + pageFlag.value
-		});
+		goLoginPage()
 	}
 	
 	const replaceGaCode = (data) => {
@@ -179,14 +174,26 @@
 </script>
 
 <style scoped lang="scss">
-	::v-deep .wd-navbar.is-border[data-v-605aecd5]::after {
-		background: transparent !important;
-	}
-
 	.mLogin {
 		min-height: 100vh;
-		padding-top: 88rpx;
+		padding-top: calc(env(safe-area-inset-top) + 88rpx);
 		box-sizing: border-box;
+
+		.top-bar {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			padding: calc(env(safe-area-inset-top) + 12rpx) 32rpx 12rpx;
+			background: #fff;
+			z-index: 100;
+		}
+
+		.back-text {
+			font-size: 32rpx;
+			color: #333;
+			line-height: 48rpx;
+		}
 
 		.textOne {
 			font-weight: 500;

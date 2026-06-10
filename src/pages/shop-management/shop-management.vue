@@ -109,11 +109,10 @@
 				<view class="titleTag"></view>
 				<!-- 全功能激活按钮 -->
 				<view class="fullFunctionBtn" @tap="handleFullFunctionClick">
-					{{ (isJingdongGroupBuy(payParams.shoptype) || isJingdongMiaosong(payParams.shoptype)) ? '任务查询' : '功能激活' }}
+					{{ isJingdongGroupBuy(payParams.shoptype) ? '任务查询' : '功能激活' }}
 				</view>
 			</view>
 			<view class="baseList">
-				<!-- 普通功能卡片（排除京东秒送批量管理功能） -->
 				<manageCard
 					v-for="(item, index) in baseFunctionList"
 					:key="item?.id || item?.code || index"
@@ -135,52 +134,6 @@
 					:disabled="funcRequesting[item?.code]"
 					:shopId="shopId"
 				/>
-
-				<!-- 京东秒送批量功能选择器 + 功能卡片 -->
-				<view
-					v-if="isJingdongMiaosong(payParams.shoptype) && jdBatchFuncList.length"
-					class="jd-batch-section"
-				>
-					<view class="jd-batch-selector-wrapper">
-						<view class="jd-batch-selector-label">批量管理功能</view>
-						<picker
-							mode="selector"
-							:range="jdBatchFuncList"
-							range-key="name"
-							:value="jdBatchSelectedIndex"
-							@change="handleJdBatchChange"
-						>
-							<view class="jd-batch-selector">
-								<text class="jd-batch-selector-text">
-									{{ jdBatchFuncList[jdBatchSelectedIndex]?.name || '请选择功能' }}
-								</text>
-								<text class="jd-batch-selector-arrow">▼</text>
-							</view>
-						</picker>
-					</view>
-
-					<view class="jd-batch-card-wrapper" v-if="jdBatchCurrentFunc">
-						<manageCard
-							:logoText="jdBatchCurrentFunc?.name || ''"
-							@add-money="addMoney(jdBatchCurrentFunc, -1)"
-							:pageUrl="toPage(jdBatchCurrentFunc?.code)"
-							:time="jdBatchCurrentFunc?.end_time"
-							:enable="jdBatchCurrentFunc?.enable"
-							@update:model-value="changeValue"
-							:shopType="payParams.shoptype"
-							:effect="effect"
-							:percentage="percentage"
-							:comment="comment"
-							:statusDesc="statusDesc"
-							:currentItem="jdBatchCurrentFunc"
-							:elmQueryShopRealtimeInfo="elmQueryShopRealtimeInfo"
-							:serviceCookingUpload="serviceCookingUpload"
-							:currentMedal="currentMedal"
-							:disabled="funcRequesting[jdBatchCurrentFunc?.code]"
-							:shopId="shopId"
-						/>
-					</view>
-				</view>
 			</view>
 		</view>
 		<!---全功能购买-->
@@ -342,24 +295,8 @@
 	const isFullPopupPlan = ref(false)
 	const authGoodsVisible = ref(false)
 	let functionList = ref([])
-	// 京东秒送批量/运营功能编码列表（与后端/其他组件保持一致）
-	const JD_MIAOSONG_BATCH_FUNC_CODES = [
-		'CATEGORY_ATTR',
-		'BATCH_PRICE',
-		'BATCH_STOCK',
-		'BATCH_NAME',
-		'BATCH_STATUS',
-		'CREATEFREIGHTPROMO',
-		'CREATEBILLIONSUBSIDYCOUPON',
-		'CREATEINSHOPCOUPON',
-		'CREATEMANJIAN',
-		'CREATEBRANDMEALCARD',
-		'UPDATESTOREBUSINESSTIME'
-	]
-	// 京东秒送批量功能选择器相关状态
 	/** 「经营数据」整块 + 「亮点功能」整块；设为 true 恢复展示 */
 	const showStoreOperatingHighlight = ref(false)
-	const jdBatchSelectedIndex = ref(0)
 	/** 经营数据中「推广消耗」「推广余额」整块；临时关闭，改为 true 可恢复展示 */
 	const showBusinessPromotionTiles = ref(false)
 	const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
@@ -386,33 +323,14 @@
 		return ''
 	}
 	
-	// 基础功能列表（排除京东秒送的批量管理功能）
 	const baseFunctionList = computed(() => {
-		const shopTypeNum = getShopTypeNum()
-		// 只有京东秒送需要拆分批量功能，其它平台直接返回全部功能
-		if (shopTypeNum !== 6) {
-			return functionList.value || []
-		}
-		return (functionList.value || []).filter(item => !JD_MIAOSONG_BATCH_FUNC_CODES.includes(item?.code))
-	})
-	
-	// 京东秒送批量管理功能列表
-	const jdBatchFuncList = computed(() => {
-		const shopTypeNum = getShopTypeNum()
-		if (shopTypeNum !== 6) {
-			return []
-		}
-		return (functionList.value || []).filter(item => JD_MIAOSONG_BATCH_FUNC_CODES.includes(item?.code))
-	})
-	
-	// 当前选择的京东秒送批量功能
-	const jdBatchCurrentFunc = computed(() => {
-		if (!jdBatchFuncList.value.length) return null
-		const index = jdBatchSelectedIndex.value
-		if (index < 0 || index >= jdBatchFuncList.value.length) {
-			return jdBatchFuncList.value[0]
-		}
-		return jdBatchFuncList.value[index]
+		const removedCodes = new Set([
+			'CATEGORY_ATTR', 'BATCH_PRICE', 'BATCH_STOCK', 'BATCH_NAME', 'BATCH_STATUS',
+			'CTGYPRTYMG', 'BATCHUPDATEPRICE', 'BATCHUPDATESTOCK', 'BATCHUPDATENAME', 'BATCHUPDATESTATE',
+			'CREATEFREIGHTPROMO', 'CREATEBILLIONSUBSIDYCOUPON', 'CREATEINSHOPCOUPON', 'CREATEMANJIAN',
+			'CREATEBRANDMEALCARD', 'UPDATESTOREBUSINESSTIME'
+		])
+		return (functionList.value || []).filter(item => !removedCodes.has(item?.code))
 	})
 	let heighLightList = ref([])
 	const payList = ref([])
@@ -622,24 +540,6 @@
 		}
 	}
 
-	// 京东秒送批量功能选择变化
-	const handleJdBatchChange = (e) => {
-		try {
-			const value = Number(e?.detail?.value ?? 0)
-			if (isNaN(value)) {
-				jdBatchSelectedIndex.value = 0
-				return
-			}
-			// 防御：索引越界时兜底到 0
-			if (value < 0 || value >= jdBatchFuncList.value.length) {
-				jdBatchSelectedIndex.value = 0
-			} else {
-				jdBatchSelectedIndex.value = value
-			}
-		} catch (err) {
-			jdBatchSelectedIndex.value = 0
-		}
-	}
 	// 放大网页
 	const zoomIn = () => {
 		// #ifdef APP-PLUS
@@ -3393,102 +3293,6 @@
 		}
 	]
 	
-	// 常量：京东秒送批量管理功能定义
-	// 注意：后端返回的代码与前端定义的 backendCode 需要一致
-	// 后端返回：CTGYPRTYMG, BATCHUPDATEPRICE, BATCHUPDATESTOCK, BATCHUPDATENAME, BATCHUPDATESTATE
-	const JD_MIAOSONG_BATCH_FUNCS = [
-		{
-			code: 'CATEGORY_ATTR',
-			name: '类目属性批量设置',
-			backendCode: 'CTGYPRTYMG', // 后端返回的代码
-			enable: false,
-			end_time: '',
-			id: null
-		},
-		{
-			code: 'BATCH_PRICE',
-			name: '批量改价',
-			backendCode: 'BATCHUPDATEPRICE', // 后端返回的代码是 BATCHUPDATEPRICE，不是 BATCH_PRICE
-			enable: false,
-			end_time: '',
-			id: null
-		},
-		{
-			code: 'BATCH_STOCK',
-			name: '批量改库存',
-			backendCode: 'BATCHUPDATESTOCK', // 后端返回的代码是 BATCHUPDATESTOCK，不是 BATCH_STOCK
-			enable: false,
-			end_time: '',
-			id: null
-		},
-		{
-			code: 'BATCH_NAME',
-			name: '批量改商品名',
-			backendCode: 'BATCHUPDATENAME', // 后端返回的代码是 BATCHUPDATENAME，不是 BATCH_NAME
-			enable: false,
-			end_time: '',
-			id: null
-		},
-		{
-			code: 'BATCH_STATUS',
-			name: '批量改上下架',
-			backendCode: 'BATCHUPDATESTATE', // 后端返回的代码是 BATCHUPDATESTATE，不是 BATCH_STATUS
-			enable: false,
-			end_time: '',
-			id: null
-		}
-		,
-		{
-			code: 'CREATEFREIGHTPROMO',
-			name: '创建减配送费活动',
-			backendCode: 'CREATEFREIGHTPROMO',
-			enable: false,
-			end_time: '',
-			id: null
-		},
-		{
-			code: 'CREATEBILLIONSUBSIDYCOUPON',
-			name: '创建百亿补贴活动',
-			backendCode: 'CREATEBILLIONSUBSIDYCOUPON',
-			enable: false,
-			end_time: '',
-			id: null
-		}
-		,
-		{
-			code: 'CREATEINSHOPCOUPON',
-			name: '店内领券活动创建',
-			backendCode: 'CREATEINSHOPCOUPON',
-			enable: false,
-			end_time: '',
-			id: null
-		},
-		{
-			code: 'CREATEMANJIAN',
-			name: '创建满减活动',
-			backendCode: 'CREATEMANJIAN',
-			enable: false,
-			end_time: '',
-			id: null
-		},
-		{
-			code: 'CREATEBRANDMEALCARD',
-			name: '创建品牌饭卡',
-			backendCode: 'CREATEBRANDMEALCARD',
-			enable: false,
-			end_time: '',
-			id: null
-		},
-		{
-			code: 'UPDATESTOREBUSINESSTIME',
-			name: '设置营业状态及营业时间',
-			backendCode: 'UPDATESTOREBUSINESSTIME',
-			enable: false,
-			end_time: '',
-			id: null
-		}
-	]
-	
 	const getShopManagement = async (id) => {
 		functionList.value = []
 		heighLightList.value = []
@@ -3546,19 +3350,6 @@
 		functionList.value = funcDisplayOrder
 			.map(code => allList.find(f => f.code === code))
 			.filter(item => item !== undefined) // 只保留存在的功能，不显示不支持的功能
-		
-		// 京东秒送（shopType=6）：在基础功能列表最下方添加5个批量管理功能
-		if (isJingdongMiaosong(shopTypeNum)) {
-			const batchFuncs = JD_MIAOSONG_BATCH_FUNCS.map(func => matchFuncWithEnable(func, latestFuncEnable))
-			functionList.value = [...functionList.value, ...batchFuncs]
-			// 初始化京东秒送批量功能选择器默认选项（优先选择第一个可用功能）
-			const firstEnabledIndex = jdBatchFuncList.value.findIndex(item => item?.enable)
-			if (firstEnabledIndex >= 0) {
-				jdBatchSelectedIndex.value = firstEnabledIndex
-			} else {
-				jdBatchSelectedIndex.value = 0
-			}
-		}
 		
 		// allList.forEach(item => {
 		// 	if (item.code === "IMZDHF") {
@@ -3665,16 +3456,9 @@
 		
 		const shopTypeNum = Number(payParams.shoptype) || 0
 		const isJdGroupFunc = isJingdongGroupBuy(shopTypeNum) && (item.code === 'JD_GROUP_OPEN' || item.code === 'JD_GROUP_BIND')
-		const isJdMiaosongBatchFunc = isJingdongMiaosong(shopTypeNum) && JD_MIAOSONG_BATCH_FUNCS.some(f => f.code === item.code)
 		
 		// 京东团购的两个功能需要使用关键词模式
 		if (isJdGroupFunc) {
-			payParams.pricetitle = item.name
-			payParams.isKeyWord = true
-			// 设置当前功能代码，用于续费弹窗只显示当前功能
-			payParams.currentFuncCode = item.code
-		} else if (isJdMiaosongBatchFunc) {
-			// 京东秒送批量管理功能：使用关键词模式，priceTitle 使用功能名称
 			payParams.pricetitle = item.name
 			payParams.isKeyWord = true
 			// 设置当前功能代码，用于续费弹窗只显示当前功能
@@ -3769,8 +3553,8 @@
 			return
 		}
 		
-		// 京东团购和京东秒送：跳转到任务查询页面
-		if (isJingdongGroupBuy(payParams.shoptype) || isJingdongMiaosong(payParams.shoptype)) {
+		// 京东团购：跳转到任务查询页面
+		if (isJingdongGroupBuy(payParams.shoptype)) {
 			uni.navigateTo({
 				url: `/pages/shop-management/task-query?shopType=${payParams.shoptype}&shopId=${shopId.value || ''}`
 			})
@@ -4242,52 +4026,6 @@
 			.baseList {
 				display: flex;
 				flex-direction: column;
-			}
-
-			/* 京东秒送批量功能选择器样式 */
-			.jd-batch-section {
-				width: 100%;
-				margin-top: 24rpx;
-			}
-
-			.jd-batch-selector-wrapper {
-				margin-bottom: 16rpx;
-				padding: 0 8rpx;
-				display: flex;
-				align-items: center;
-			}
-
-			.jd-batch-selector-label {
-				font-size: 26rpx;
-				color: #333;
-				margin-right: 16rpx;
-				white-space: nowrap;
-			}
-
-			.jd-batch-selector {
-				flex: 1;
-				height: 64rpx;
-				border-radius: 32rpx;
-				border: 1px solid #e5e5e5;
-				padding: 0 24rpx;
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				background-color: #ffffff;
-			}
-
-			.jd-batch-selector-text {
-				font-size: 26rpx;
-				color: #333333;
-			}
-
-			.jd-batch-selector-arrow {
-				font-size: 22rpx;
-				color: #999999;
-			}
-
-			.jd-batch-card-wrapper {
-				width: 100%;
 			}
 		}
 	}

@@ -194,8 +194,19 @@ export function getLatestVersion(data) {
 					reject(new Error('plus.runtime is not available'));
 				}
         		// #endif
-        		// #ifndef APP-PLUS
-        		reject(new Error('Only available in APP-PLUS'));
+        		// #ifdef APP-HARMONY
+        		resolve({
+        			versionName: versionData.version || '0.0.0',
+        			versionCode: parseInt(versionData.versionCode) || 0,
+        			downloadUrl: `${baseUrl}/apk/zorotool.apk`,
+        			wgtUrl: `${baseUrl}/wgt/zorotool.wgt`,
+        			forceUpdate: 0,
+        			isSilently: 0,
+        			versionDesc: versionData.versionDesc || ''
+        		});
+        		// #endif
+        		// #ifndef APP-PLUS || APP-HARMONY
+        		reject(new Error('Only available in APP-PLUS or APP-HARMONY'));
         		// #endif
         	},
         	fail: (err) => {

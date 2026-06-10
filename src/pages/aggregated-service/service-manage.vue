@@ -1465,7 +1465,7 @@
 
 	// 头像加载失败处理
 	const handleAvatarError = (e) => {
-		// 如果头像加载失败，使用默认头像（小柠檬 logo）
+		// 如果头像加载失败，使用默认头像（青柠助手 logo）
 		avatarImage.value = '/static/user/jihu-logo.png'
 	}
 

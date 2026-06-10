@@ -14,7 +14,11 @@
 			</view>
 		</view>
 		<view class="but" @click="toType">确定</view>
-		<view class="online-service" @click="openOnlineService">在线客服</view>
+		<view class="online-service" @tap="openOnlineService">在线客服</view>
+		<IcpFooter class="icp-bar" />
+		<!-- #ifdef APP-HARMONY -->
+		<PrivacyConsentDialog :visible="showPrivacyDialog" @agree="onPrivacyAgree" />
+		<!-- #endif -->
 	</view>
 </template>
 
@@ -28,12 +32,20 @@
 	import * as versionUtils from '@/uni_modules/hic-upgrade/utils/index.js'
 	import { getLatestVersion } from '@/utils/version.js'
 	import { openOnlineService } from '@/utils/onlineService'
+	import IcpFooter from '@/components/IcpFooter.vue'
+	// #ifdef APP-HARMONY
+	import PrivacyConsentDialog from '@/components/PrivacyConsentDialog.vue'
+	import { hasAgreedPrivacy } from '@/utils/privacyConsent'
+	// #endif
 	// const route = useRoute()
 	// const router = useRouter()
 	
 	const authStore = useAuthStore()
 	const currentVersion = ref('')
 	const serverVersion = ref('')
+	// #ifdef APP-HARMONY
+	const showPrivacyDialog = ref(!hasAgreedPrivacy())
+	// #endif
 	
 	// 获取版本信息
 	const getVersionInfo = async () => {
@@ -72,13 +84,9 @@
 		// #endif
 	}
 	
-	// 页面加载时检查是否已登录，如果已登录则直接跳转到主页面
-	onLoad(() => {
-		// 从本地存储检查token
+	const redirectIfLoggedIn = () => {
 		const token = uni.getStorageSync('token')
 		if (token && token.trim() !== '') {
-			// console.log("选择身份页检测到已登录，自动跳转到主页面");
-			// 确保token已恢复到store（App.vue的onLaunch应该已经恢复，这里再次确保）
 			if (!authStore.token) {
 				authStore.setToken(token)
 			}
@@ -86,15 +94,33 @@
 			if (userId && !authStore.userId) {
 				authStore.setUserId(userId)
 			}
-			// 如果已登录，直接跳转到主页面
 			uni.reLaunch({
 				url: '/pages/master-index/master-index'
 			})
-		} else {
-			// console.log("未检测到登录信息，显示登录选择页");
+			return true
 		}
-		// 获取版本信息（无论是否登录都获取，因为页面可能仍会显示）
-		getVersionInfo()
+		return false
+	}
+
+	// #ifdef APP-HARMONY
+	const onPrivacyAgree = () => {
+		showPrivacyDialog.value = false
+		if (!redirectIfLoggedIn()) {
+			getVersionInfo()
+		}
+	}
+	// #endif
+
+	// 页面加载时检查是否已登录，如果已登录则直接跳转到主页面
+	onLoad(() => {
+		// #ifdef APP-HARMONY
+		if (showPrivacyDialog.value) {
+			return
+		}
+		// #endif
+		if (!redirectIfLoggedIn()) {
+			getVersionInfo()
+		}
 	})
 	
 	const itemList = [
@@ -218,6 +244,13 @@
 			font-size: 28rpx;
 			border-radius: 12rpx;
 			background-color: rgba(255, 255, 255, 0.88);
+		}
+
+		.icp-bar {
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: calc(20rpx + env(safe-area-inset-bottom));
 		}
 	}
 </style>

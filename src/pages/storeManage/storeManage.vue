@@ -1,6 +1,6 @@
 ﻿<template>
-	<view class="store" :style="{paddingTop: systemBarHeight + 'px'}">
-		<wd-navbar :fixed="true" :safeAreaInsetTop="true" title="小柠檬" :bordered="false"></wd-navbar>
+	<view class="store" :class="{ 'store--tab': embeddedTab }" :style="{paddingTop: systemBarHeight + 'px'}">
+		<wd-navbar :fixed="true" :safeAreaInsetTop="true" title="青柠助手" :bordered="false"></wd-navbar>
 		<view class="header-fixed-container" style="position: fixed;width: 100%;left: 0;z-index: 12;top: 0;overflow: visible;padding-bottom: 30rpx;height: calc(10px + 7.15625rem + 70rpx);min-height: calc(10px + 7.15625rem + 70rpx);" :style="`background: ${currentPlatformBgColor};`">
 			<!-- 底部遮罩层：防止店铺卡片溢出 -->
 			<view class="header-bottom-mask" :style="`background: ${currentPlatformBgColor};`"></view>
@@ -227,22 +227,6 @@
 								{{ getExpireTimeText(item, 'ZDHP') }}
 							</view>
 						</view>
-						<view v-if="showStoreListZdtgToggle" class="image-text_7 image-text_7-with-expire">
-							<view class="func-row">
-								<!--  @click="onPopupHandler(item, '智能推广')" -->
-								<text class="text-group_6" :class="{ 'text-disabled': !isFuncSupported('ZDTG') }">点金</text>
-								<wd-switch 
-									size="16px" 
-									v-model="item.ZDTG" 
-									:active-color="tab==1 ? '#FACC05' : '#0493F7'"
-									:disabled="!isFuncSupported('ZDTG')"
-									class="switch-item" 
-									@change="beforeChangeFun(item, 'ZDTG', '智能推广')" />
-							</view>
-							<view class="expire-time-text" v-if="isFuncSupported('ZDTG')">
-								{{ getExpireTimeText(item, 'ZDTG') }}
-							</view>
-						</view>
 						<view class="image-text_7 image-text_7-with-expire" v-if="tab==1">
 							<view class="func-row">
 								<!--  @click="onPopupHandler(item, '评价申诉')" -->
@@ -259,6 +243,21 @@
 								{{ getExpireTimeText(item, 'PJSS') }}
 							</view>
 						</view>
+						<view class="image-text_7 image-text_7-with-expire">
+							<view class="func-row">
+								<text class="text-group_6" :class="{ 'text-disabled': !isFuncSupported('KEFU') }">聚合客服</text>
+								<wd-switch 
+									size="16px" 
+									v-model="item.KEFU" 
+									:active-color="tab==1 ? '#FACC05' : '#0493F7'"
+									:disabled="!isFuncSupported('KEFU')"
+									class="switch-item" 
+									@change="beforeChangeFun(item, 'KEFU', 'IM聚合客服')" />
+							</view>
+							<view class="expire-time-text" v-if="isFuncSupported('KEFU')">
+								{{ getExpireTimeText(item, 'KEFU') }}
+							</view>
+						</view>
 					</view>
 					<view class="block_6 flex-row">
 						<!-- <view class="group_8 flex-row">
@@ -269,8 +268,6 @@
 										</view>
 									</view> -->
 						<view style="display: flex;align-items: center;">
-							<view class="all-fun" @click="handleFuncActivate(item)">
-							</view>
 							<view class="group_112 flex-row" @click="toTop(item, item.is_top)"
 								:class="{'not-top': item.is_top}">
 							</view>
@@ -567,7 +564,8 @@
 	<wd-action-sheet v-model="authGoodsVisible" :z-index="1004" @close="handleClose">
 			<SettingPopupPlanContent :is-full-popup-plan="isFullPopupPlan" :isV2="true"
 				:shopId="shopId" :priceTitle="payParams.pricetitle" @close-popup="closeAuthGoodsVisibleHandler"
-			:shopType="payParams.shoptype" :currentFuncCode="currentRenewFuncCode" @success="subscribe" @updataShopFunc="updataShopFunc" />
+			:shopType="payParams.shoptype" :currentFuncCode="currentRenewFuncCode" :isIMKefuRenew="isIMKefuRenew"
+			@success="subscribe" @updataShopFunc="updataShopFunc" />
 		</wd-action-sheet>
 
 	<wd-popup v-model="addState" position="center"
@@ -767,6 +765,13 @@
 </template>
 
 <script setup>
+	defineProps({
+		embeddedTab: {
+			type: Boolean,
+			default: false
+		}
+	})
+
 	import {
 		ManagementApi
 	} from '@/api/management.ts'
@@ -817,8 +822,6 @@
 	const currentTooltipShop = ref(null)
 	const currentTooltipType = ref('') // 'auth'
 	const authTooltipText = ref('授权异常会导致功能无法正常使用，请重新添加店铺恢复授权。')
-	/** 门店卡片上的「点金」（ZDTG）开关暂隐；设为 true 恢复展示 */
-	const showStoreListZdtgToggle = ref(false)
 	
 	// 平台Logo映射
 	const platformLogos = new Map()
@@ -862,10 +865,26 @@
 	}
 
 	const STORE_MANAGE_SHOP_TYPES = new Set([1, 2, 3, 4, 5, 6])
+	const STORE_MANAGE_SHOP_TYPE_STORAGE_KEY = 'storeManage_lastShopType'
 	const normalizeStoreManageShopType = (raw) => {
 		const n = Number(raw)
 		return STORE_MANAGE_SHOP_TYPES.has(n) ? n : 1
 	}
+	const getStoredShopType = () => {
+		try {
+			const saved = uni.getStorageSync(STORE_MANAGE_SHOP_TYPE_STORAGE_KEY)
+			if (saved === '' || saved === null || saved === undefined) return null
+			return normalizeStoreManageShopType(saved)
+		} catch (e) {
+			return null
+		}
+	}
+	const saveStoredShopType = (shopType) => {
+		try {
+			uni.setStorageSync(STORE_MANAGE_SHOP_TYPE_STORAGE_KEY, normalizeStoreManageShopType(shopType))
+		} catch (e) {}
+	}
+	const initialStoreManageShopType = getStoredShopType() ?? 1
 
 	const props = ref({
 		list: [{
@@ -937,7 +956,7 @@
 		pageSize: 10,
 		filter: {
 			time_state: undefined, // 店铺到期时间过期 全部 = 0 未到期 = 1 即将到期 = 2 已经到期 = 3
-			shopType: 1, // 店铺类型  None = 0  美团 = 1  淘宝闪购外卖 = 2
+			shopType: initialStoreManageShopType, // 店铺类型  None = 0  美团 = 1  淘宝闪购外卖 = 2
 			word: undefined, // 门店名称或官方id
 			group: undefined, // 指定分组
 			state: undefined, // None = 0  店铺未登陆 = 1  店铺已掉线 = 3  店铺营业中 = 4  店铺上线中 = 6  店铺已下线 = 7
@@ -985,11 +1004,13 @@
 		isKeyWord: true
 	})
 	const currentRenewFuncCode = ref('')
+	const isIMKefuRenew = ref(false)
 	const FUNC_CODE_NAME_MAP = {
 		OPENSHOP: '店铺多开',
 		ZDCC: '自动出餐',
 		IMZDHF: 'IM自动回复',
 		ZDHP: '自动回评',
+		KEFU: 'IM聚合客服',
 		ZDTG: '智能推广',
 		PJSS: '评价申诉'
 	}
@@ -1008,8 +1029,8 @@
 		{ label: '自动出餐', value: 'ZDCC' },
 		{ label: '自动回复', value: 'IMZDHF' },
 		{ label: '自动回评', value: 'ZDHP' },
-		{ label: '智能推广', value: 'ZDTG' },
 		{ label: '评价申诉', value: 'PJSS' },
+		{ label: '聚合客服', value: 'KEFU' },
 		// 按需求：店铺多开放到最下面
 		{ label: '店铺多开', value: 'OPENSHOP' }
 	]
@@ -1017,7 +1038,11 @@
 		let baseOptions = expireFuncAllOptions
 		// 淘宝闪购外卖：隐藏“自动回评”续费选项
 		if (Number(tab.value) === 2) {
-			baseOptions = expireFuncAllOptions.filter(item => item.value !== 'ZDHP')
+			baseOptions = baseOptions.filter(item => item.value !== 'ZDHP')
+		}
+		// 仅美团外卖展示评价申诉
+		if (Number(tab.value) !== 1) {
+			baseOptions = baseOptions.filter(item => item.value !== 'PJSS')
 		}
 		// 为空时表示暂未拉到支持列表，保留全部可选
 		if (supportedFuncCodes.value.size === 0) return baseOptions
@@ -1075,6 +1100,13 @@
 	const supportedFuncCodes = ref(new Set())
 	
 	// 根据店铺类型获取支持的功能列表
+	const getDefaultSupportedFuncCodes = (shopType) => {
+		const base = ['ZDCC', 'IMZDHF', 'ZDHP', 'KEFU']
+		if (Number(shopType) === 1) {
+			return new Set([...base, 'PJSS'])
+		}
+		return new Set(base)
+	}
 	const getSupportedFuncList = async (shopType) => {
 		try {
 			const shopTypeNum = normalizeStoreManageShopType(shopType)
@@ -1082,21 +1114,32 @@
 			const res = await FunctionPriceApi.getFuncList(shopTypeNum)
 			if (res.code === 200 || res.Success) {
 				const funcs = res.data || res.Data || []
-				// 将功能代码存储到Set中，方便快速查找
-				supportedFuncCodes.value = new Set(funcs.map((f) => f.code || '').filter((code) => code))
+				const codes = new Set(funcs.map((f) => f.code || '').filter((code) => code))
+				codes.add('KEFU')
+				codes.delete('ZDTG')
+				if (shopTypeNum !== 1) {
+					codes.delete('PJSS')
+				}
+				supportedFuncCodes.value = codes
 			} else {
-				// 如果获取失败，默认支持所有功能（兼容处理）
-				supportedFuncCodes.value = new Set(['ZDCC', 'IMZDHF', 'ZDHP', 'ZDTG', 'PJSS'])
+				supportedFuncCodes.value = getDefaultSupportedFuncCodes(shopTypeNum)
 			}
 		} catch (err) {
-			// 出错时默认支持所有功能（兼容处理）
-			supportedFuncCodes.value = new Set(['ZDCC', 'IMZDHF', 'ZDHP', 'ZDTG', 'PJSS'])
+			supportedFuncCodes.value = getDefaultSupportedFuncCodes(normalizeStoreManageShopType(shopType))
 		}
 	}
 	
 	// 检查功能是否支持
 	const isFuncSupported = (funcCode) => {
-		// 如果功能列表为空，默认支持（兼容处理）
+		if (funcCode === 'KEFU') {
+			return true
+		}
+		if (funcCode === 'PJSS') {
+			return Number(tab.value) === 1 && (supportedFuncCodes.value.size === 0 || supportedFuncCodes.value.has('PJSS'))
+		}
+		if (funcCode === 'ZDTG') {
+			return false
+		}
 		if (supportedFuncCodes.value.size === 0) {
 			return true
 		}
@@ -2320,17 +2363,13 @@
 
 	}
 
-	// 功能激活按钮点击（封装平台差异逻辑）
-	const handleFuncActivate = (row) => {
-		onPopupHandler(row, '功能激活')
-	}
-
 	// 设置门店点击（封装平台差异逻辑）
 	const handleManageClick = (row) => {
 		toManage(row)
 	}
 	const handleClose = () => {
 		isFullPopupPlan.value = false
+		isIMKefuRenew.value = false
 	}
 	const getPayList = async () => {
 		uni.showLoading({
@@ -2390,6 +2429,7 @@
 		payParams.shoptype = queryParams.filter.shopType
 		shopId.value = row.id
 		currentRenewFuncCode.value = ''
+		isIMKefuRenew.value = false
 		
 		// 判断是功能代码还是功能名称
 		const isFuncCode = FUNC_CODE_LIST.includes(codeOrStr)
@@ -2408,6 +2448,15 @@
 			payParams.pricetitle = ''
 			payParams.isKeyWord = false
 			authGoodsVisible.value = true
+			return
+		} else if (codeOrStr === 'KEFU') {
+			// IM聚合客服续费（与聚合客服店铺管理页保持一致）
+			isFullPopupPlan.value = false
+			isIMKefuRenew.value = true
+			currentRenewFuncCode.value = 'KEFU'
+			payParams.pricetitle = 'IM客服_月'
+			payParams.isKeyWord = true
+			getPayList()
 			return
 		} else if (isFuncCode) {
 			// 单个功能续费，使用功能名称 + '_月' 作为 priceTitle（与 shop-management 页面保持一致）
@@ -2435,6 +2484,7 @@
 				'ZDCC': '自动出餐',
 				'IMZDHF': '自动回复',
 				'ZDHP': '自动回评',
+				'KEFU': '聚合客服',
 				'ZDTG': '智能推广',
 				'PJSS': '评价申诉'
 			}
@@ -2544,6 +2594,10 @@
 						shop.ZDHP = funcInfo.enable || false
 						shop.ZDHPtime = funcInfo.NewEndTime ? time(funcInfo.NewEndTime) : '已到期'
 						shop.ZDHPendTime = funcInfo.NewEndTime || null
+					} else if (code === 'KEFU') {
+						shop.KEFU = funcInfo.enable || false
+						shop.KEFUtime = funcInfo.NewEndTime ? time(funcInfo.NewEndTime) : '已到期'
+						shop.KEFUendTime = funcInfo.NewEndTime || null
 					} else if (code === 'ZDTG') {
 						shop.ZDTG = funcInfo.enable || false
 						shop.ZDTGtime = funcInfo.NewEndTime ? time(funcInfo.NewEndTime) : '已到期'
@@ -2559,6 +2613,7 @@
 	}
 	const closeAuthGoodsVisibleHandler = () => {
 		authGoodsVisible.value = false
+		isIMKefuRenew.value = false
 	}
 	const delShop = (item) => {
 		// 调用 uni.showModal 方法
@@ -2801,7 +2856,7 @@
 	const selectCategory = (index) => {
 		categoryIndex.value = index
 	}
-	const tab = ref(1)
+	const tab = ref(initialStoreManageShopType)
 	const menuVisible = ref(false)
 	
 	// 计算当前平台标签
@@ -3043,6 +3098,11 @@
 						item.ZDHPtime = time(zdhpFunc?.end_time)
 						item.ZDHPendTime = zdhpFunc?.end_time || null // 保存原始时间用于计算剩余天数
 						
+						const kefuFunc = funcInfo.find(itemA => itemA.code == 'KEFU')
+						item.KEFU = kefuFunc?.enable || false
+						item.KEFUtime = time(kefuFunc?.end_time)
+						item.KEFUendTime = kefuFunc?.end_time || null
+						
 						const imzdhfFunc = funcInfo.find(itemA => itemA.code == 'IMZDHF')
 						item.IMZDHF = imzdhfFunc?.enable || false
 						item.IMZDHFtime = time(imzdhfFunc?.end_time)
@@ -3068,6 +3128,9 @@
 						item.ZDHP = false
 						item.ZDHPtime = '已到期'
 						item.ZDHPendTime = null
+						item.KEFU = false
+						item.KEFUtime = '已到期'
+						item.KEFUendTime = null
 						item.IMZDHF = false
 						item.IMZDHFtime = '已到期'
 						item.IMZDHFendTime = null
@@ -3523,6 +3586,7 @@
 	const onChange = (item) => {
 		queryParams.filter.shopType = item.shopType
 		tab.value = item.shopType
+		saveStoredShopType(item.shopType)
 		menuVisible.value = false // 选择后关闭菜单
 		queryParams.page = 1 // 切换店铺类型时重置到第一页
 		getShopList()
@@ -3550,6 +3614,8 @@
 			endTime = item.IMZDHFendTime
 		} else if (code === 'ZDHP') {
 			endTime = item.ZDHPendTime
+		} else if (code === 'KEFU') {
+			endTime = item.KEFUendTime
 		} else if (code === 'ZDTG') {
 			endTime = item.ZDTGendTime
 		} else if (code === 'PJSS') {
@@ -3758,6 +3824,7 @@
 					ZDCCtime: item.ZDCCtime,
 					IMZDHFtime: item.IMZDHFtime,
 					ZDHPtime: item.ZDHPtime,
+					KEFUtime: item.KEFUtime,
 					ZDTGtime: item.ZDTGtime,
 					CPDTtimetext: item.CPDTtimetext || '已到期',
 					code
@@ -3802,6 +3869,8 @@
 				shop.IMZDHF = data.enable
 			} else if (data.code === 'ZDHP') {
 				shop.ZDHP = data.enable
+			} else if (data.code === 'KEFU') {
+				shop.KEFU = data.enable
 			} else if (data.code === 'ZDTG') {
 				shop.ZDTG = data.enable
 			}
@@ -3871,6 +3940,7 @@
 			const st = normalizeStoreManageShopType(options.shopType)
 			queryParams.filter.shopType = st
 			tab.value = st
+			saveStoredShopType(st)
 		}
 		// 获取当前店铺类型的功能列表
 		getSupportedFuncList(queryParams.filter.shopType)
@@ -3920,11 +3990,21 @@
 		align-items: center;
 		position: relative;
 		background-color: transparent;
-		min-height: calc(100vh - 70px - env(safe-area-inset-bottom));
-		height: calc(100vh - 70px - env(safe-area-inset-bottom));
+		height: 100%;
+		min-height: 100%;
 		padding-bottom: 0;
 		margin-bottom: 0;
 		overflow: hidden;
+
+	&.store--tab {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		min-height: 0;
+	}
 
 		.store_flex {
 			display: flex;
@@ -5652,20 +5732,20 @@
 	}
 
 	.image-text_7 {
-		width: 125rpx;
+		width: 110rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		flex: 0 0 125rpx;
-		min-width: 125rpx;
-		max-width: 125rpx;
+		flex: 0 0 110rpx;
+		min-width: 110rpx;
+		max-width: 110rpx;
 		/* iOS 布局修复：确保 flex 子元素正确显示 */
 		flex-shrink: 0;
 		flex-grow: 0;
-		flex-basis: 125rpx;
+		flex-basis: 110rpx;
 		/* iOS Safari flex 兼容性修复 */
 		-webkit-box-flex: 0;
-		-webkit-flex: 0 0 125rpx;
+		-webkit-flex: 0 0 110rpx;
 		-webkit-box-align: center;
 		-webkit-align-items: center;
 		-webkit-box-pack: justify;
@@ -7167,6 +7247,7 @@
 
 	.p-title {
 		text-align: center;
+		font-size: 30rpx;
 	}
 
 	.isR {
@@ -7183,13 +7264,6 @@
 
 	::v-deep .wd-navbar {
 		background-color: transparent;
-	}
-
-	.all-fun {
-		width: 184rpx;
-		height: 50rpx;
-		background: url("@/static/shop/icon_032a.png") no-repeat;
-		background-size: 100% 100%;
 	}
 
 	// .switch-item {

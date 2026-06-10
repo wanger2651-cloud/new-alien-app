@@ -180,8 +180,12 @@ export class Router {
             this.replace(toRoute)
             return false
           }
-          // 阻止返回到登录页面
-          if (toRoute?.name === 'login' || toRoute?.path?.includes('login')) {
+          // 仅从主界面返回登录栈时拦截，避免登录后物理返回键回到登录页
+          const toPath = toRoute?.path || ''
+          const fromPath = fromRoute?.path || ''
+          const isLoginRoute = toPath.includes('/pages/login/')
+          const fromMainApp = fromPath.includes('/pages/master-index/')
+          if (isLoginRoute && fromMainApp) {
             return false
           }
           // 禁止返回初始页面

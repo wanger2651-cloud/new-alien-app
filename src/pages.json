@@ -2,7 +2,8 @@
 	"easycom": {
 		"autoscan": true,
 		"custom": {
-			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue",
+			"^inputItem$": "@/components/inputItem.vue"
 		}
 	},
 	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
@@ -90,11 +91,8 @@
 		}, {
 			"path": "pages/login/register",
 			"style": {
-				"navigationBarTitleText": "注册",
 				"navigationStyle": "custom",
-				"app-plus": {
-					"popGesture": "none"
-				}
+				"navigationBarTitleText": "注册"
 			}
 		}, {
 			"path": "pages/login/forgetPassword",
@@ -104,6 +102,13 @@
 				"app-plus": {
 					"popGesture": "none"
 				}
+			}
+		}, {
+			"path": "pages/common/policy-webview",
+			"style": {
+				"navigationBarTitleText": "政策详情",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
 			}
 		}, {
 			"path": "pages/shop-management/shop-management",
@@ -135,6 +140,13 @@
 				"app-plus": {
 					"popGesture": "none"
 				}
+			}
+		}, {
+			"path": "pages/customer-service/index",
+			"authRequired": false,
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "在线客服"
 			}
 		}, {
 			"path": "pages/integral/integral",
@@ -312,7 +324,7 @@
 		    "style": {
 		        "navigationBarTitleText": "版本更新",
 		        "navigationStyle": "custom",                // 取消本页面的导航栏
-		        "backgroundColor": "transparent",
+		        "backgroundColor": "#FFFFFF",
 		        "disableScroll": true,
 		        "app-plus": {
 		            "background": "transparent",            // 背景透明
@@ -397,12 +409,23 @@
 					"popGesture": "none"
 				}
 			}
+		},
+		{
+			"path": "pages/user/app-tutorial",
+			"authRequired": true,
+			"title": "青柠助手使用教程",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"popGesture": "close"
+				}
+			}
 		}
 
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app",
+		"navigationBarTitleText": "青柠助手",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8",
 		"app-plus": {

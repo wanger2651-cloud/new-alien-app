@@ -135,18 +135,6 @@
 		'PJSS': { code: 'PJSS', name: '评价申诉', desc: '评价申诉功能', icon: '../static/shop/setting13.png' },
 		'CHATPUSH': { code: 'CHATPUSH', name: '微信推送', desc: '微信推送服务', icon: '../static/shop/icon_051a.png' },
 		'KEFU': { code: 'KEFU', name: 'IM聚合客服', desc: 'IM聚合客服功能', icon: '../static/shop/setting11.png' },
-		// 京东秒送专用功能
-		'CATEGORY_ATTR': { code: 'CATEGORY_ATTR', name: '类目属性设置', desc: '批量设置商品类目和属性，快速管理商品分类信息。', icon: '../static/shop/setting13.png' },
-		'BATCH_PRICE': { code: 'BATCH_PRICE', name: '批量改价', desc: '批量修改商品价格，支持按比例或固定金额调整，提高运营效率。', icon: '../static/shop/setting13.png' },
-		'BATCH_STOCK': { code: 'BATCH_STOCK', name: '批量改库存', desc: '批量修改商品库存数量，快速调整商品可售状态。', icon: '../static/shop/setting13.png' },
-		'BATCH_NAME': { code: 'BATCH_NAME', name: '批量改菜品名', desc: '批量修改商品名称，支持批量替换和统一命名规范。', icon: '../static/shop/setting13.png' },
-		'BATCH_STATUS': { code: 'BATCH_STATUS', name: '批量上下架', desc: '批量上架或下架商品，快速控制商品销售状态。', icon: '../static/shop/setting13.png' },
-		'CREATEFREIGHTPROMO': { code: 'CREATEFREIGHTPROMO', name: '减配送费活动', desc: '续费后自动按配置创建减配送费活动。', icon: '../static/shop/setting13.png' },
-		'CREATEBILLIONSUBSIDYCOUPON': { code: 'CREATEBILLIONSUBSIDYCOUPON', name: '百亿补贴活动', desc: '续费后自动按配置报名/创建百亿补贴活动。', icon: '../static/shop/setting13.png' },
-		'CREATEINSHOPCOUPON': { code: 'CREATEINSHOPCOUPON', name: '店内领券活动', desc: '续费后自动按配置创建店内领券活动。', icon: '../static/shop/setting13.png' },
-		'CREATEMANJIAN': { code: 'CREATEMANJIAN', name: '满减活动', desc: '续费后自动按配置创建京东满减促销活动。', icon: '../static/shop/setting13.png' },
-		'CREATEBRANDMEALCARD': { code: 'CREATEBRANDMEALCARD', name: '品牌饭卡', desc: '续费后自动按配置创建品牌饭卡活动。', icon: '../static/shop/setting13.png' },
-		'UPDATESTOREBUSINESSTIME': { code: 'UPDATESTOREBUSINESSTIME', name: '营业时间', desc: '续费后自动按配置设置营业状态及营业时间。', icon: '../static/shop/setting13.png' },
 		// 兼容其他可能的代码格式
 		'CC': { code: 'CC', name: '出餐', desc: '提高出餐及时率', icon: '../static/shop/setting10.png' },
 		'IM': { code: 'IM', name: '回复', desc: '消息自动回复', icon: '../static/shop/setting11.png' },
@@ -177,27 +165,7 @@
 	}
 	
 	// 功能显示顺序（从左到右），多开功能放在第一个
-	// 京东秒送（shopType=6）额外显示5个批量管理功能
 	const funcDisplayOrder = ['MULTIOPEN', 'ZDCC', 'IMZDHF', 'ZDHP', 'ZDTG', 'PJSS']
-	const jdFuncDisplayOrder = [
-		'MULTIOPEN',
-		'ZDCC',
-		'IMZDHF',
-		'ZDHP',
-		'ZDTG',
-		'PJSS',
-		'CATEGORY_ATTR',
-		'BATCH_PRICE',
-		'BATCH_STOCK',
-		'BATCH_NAME',
-		'BATCH_STATUS',
-		'CREATEFREIGHTPROMO',
-		'CREATEBILLIONSUBSIDYCOUPON',
-		'CREATEINSHOPCOUPON',
-		'CREATEMANJIAN',
-		'CREATEBRANDMEALCARD',
-		'UPDATESTOREBUSINESSTIME'
-	]
 	const isTbTakeout = computed(() => Number(props.shopType) === 2)
 	
 	// 部分平台（美团闪购3、美团医药4、淘宝闪购零售5、京东秒送6、抖音即时零售7）单功能选项宽度改为一半
@@ -221,7 +189,7 @@
 		
 		// 根据店铺类型选择对应的功能显示顺序
 		// 淘宝闪购外卖：移除“自动回评(ZDHP)”
-		const baseDisplayOrder = shopTypeNum === 6 ? jdFuncDisplayOrder : funcDisplayOrder
+		const baseDisplayOrder = funcDisplayOrder
 		const displayOrder = isTbTakeout.value ? baseDisplayOrder.filter(code => code !== 'ZDHP') : baseDisplayOrder
 		
 		if (!funcList.value || funcList.value.length === 0) {
@@ -259,16 +227,6 @@
 			supportedFuncs.unshift(multiInfo)
 		}
 		
-		// 京东秒送：添加5个批量管理功能（如果不在列表中）
-		if (shopTypeNum === 6) {
-			const jdBatchFuncs = ['CATEGORY_ATTR', 'BATCH_PRICE', 'BATCH_STOCK', 'BATCH_NAME', 'BATCH_STATUS']
-			jdBatchFuncs.forEach(funcCode => {
-				const funcInfo = funcInfoMap[funcCode]
-				if (funcInfo && !supportedFuncs.find(f => f.code === funcCode)) {
-					supportedFuncs.push(funcInfo)
-				}
-			})
-		}
 		supportedFuncs.sort((a, b) => {
 			const indexA = displayOrder.indexOf(a.code)
 			const indexB = displayOrder.indexOf(b.code)
@@ -306,19 +264,6 @@
 		'PJSS': '评价申诉',
 		'CHATPUSH': '微信推送',
 		'KEFU': 'IM客服',
-		// 京东秒送专用功能（使用完整名称，用于关键词搜索）
-		'CATEGORY_ATTR': '类目属性批量设置',
-		'BATCH_PRICE': '批量改价',
-		'BATCH_STOCK': '批量改库存',
-		'BATCH_NAME': '批量改商品名',
-		'BATCH_STATUS': '批量改上下架',
-		// 以下名称需与后端 FunctionPrice 的规格/功能名称保持一致，否则会查不到价格
-		'CREATEBILLIONSUBSIDYCOUPON': '创建百亿补贴活动',
-		'CREATEFREIGHTPROMO': '创建减配送费活动',
-		'CREATEINSHOPCOUPON': '店内领券活动创建',
-		'CREATEMANJIAN': '创建满减活动',
-		'CREATEBRANDMEALCARD': '创建品牌饭卡',
-		'UPDATESTOREBUSINESSTIME': '设置营业状态及营业时间'
 	}
 	
 	// 功能服务介绍数据（每个功能对应的服务介绍卡片）
@@ -347,41 +292,6 @@
 		'KEFU': [
 		{  desc:'不同平台店铺的顾客消息，聚合客服工作台显示并统一进行回复' },
 		],
-		// 京东秒送专用功能
-		'CATEGORY_ATTR': [
-			{ desc: '批量设置商品属性，提高运营效率。' },
-		],
-		'BATCH_PRICE': [
-			{ desc: '按百分比或固定金额批量修改商品价格，提高运营效率。' },
-		],
-		'BATCH_STOCK': [
-			{  desc: '批量修改商品库存数量，快速调整商品可售状态' },
-		],
-		'BATCH_NAME': [
-			{ desc: '批量修改商品名称，支持批量替换和统一命名规范' },
-		],
-		'BATCH_STATUS': [
-			{  desc: '批量上架或下架商品，快速控制商品销售状态' },
-		]
-		,
-		'CREATEFREIGHTPROMO': [
-			{ desc: '按配置创建减配送费活动，支持周期/时段/满减阶梯等参数。' },
-		],
-		'CREATEBILLIONSUBSIDYCOUPON': [
-			{ desc: '按配置创建/报名百亿补贴活动，支持自动追补与补贴金额设置。' },
-		],
-		'CREATEINSHOPCOUPON': [
-			{ desc: '按配置创建店内领券活动，提升转化。' },
-		],
-		'CREATEMANJIAN': [
-			{ desc: '按配置创建满减促销活动，提升客单与下单率。' },
-		],
-		'CREATEBRANDMEALCARD': [
-			{ desc: '按配置创建品牌饭卡活动，提升复购。' },
-		],
-		'UPDATESTOREBUSINESSTIME': [
-			{ desc: '按配置设置营业状态及营业时间，支持自动化配置。' },
-		]
 	}
 	
 	// 全功能激活时需要展示的功能代码（不包含评价申诉）
@@ -539,29 +449,10 @@
 					priceTitle = '全功能|店铺多开_月'
 					isKeyWord = true
 				} else {
-					// 京东秒送（shopType=6）：这些功能按“关键词模式”查规格（不拼 _月）
-					const jdKeywordFuncs = [
-						'CATEGORY_ATTR',
-						'BATCH_PRICE',
-						'BATCH_STOCK',
-						'BATCH_NAME',
-						'BATCH_STATUS',
-						'CREATEBILLIONSUBSIDYCOUPON',
-						'CREATEFREIGHTPROMO',
-						'CREATEINSHOPCOUPON',
-						'CREATEMANJIAN',
-						'CREATEBRANDMEALCARD',
-						'UPDATESTOREBUSINESSTIME'
-					]
-					if (apiShopType === 6 && jdKeywordFuncs.includes(funcCode)) {
-						priceTitle = funcCodeToNameMap[funcCode] || funcCode
-						isKeyWord = true
-					} else {
-						// 其他功能：使用功能名称+_月，不使用关键词模式
-						const funcName = funcCodeToNameMap[funcCode] || funcCode
-						priceTitle = funcName + '_月'
-						isKeyWord = false
-					}
+					// 使用功能名称+_月，不使用关键词模式
+					const funcName = funcCodeToNameMap[funcCode] || funcCode
+					priceTitle = funcName + '_月'
+					isKeyWord = false
 				}
 			} else {
 				uni.hideLoading()
@@ -592,17 +483,6 @@
 					const name = item.func_name || item.name || item.pricetitle || ''
 					return name && name.indexOf('店铺多开') !== -1
 				})
-			}
-
-			// 批量改价功能：去除"0-2000品"规格，并且只保留第一个规格
-			if (type === 'single' && funcCode === 'BATCH_PRICE') {
-				internalPayList.value = internalPayList.value.filter(item => {
-					const name = item.func_name || item.name || item.pricetitle || ''
-					return !(name && name.indexOf('0-2000品') !== -1)
-				})
-				if (internalPayList.value.length > 0) {
-					internalPayList.value = [internalPayList.value[0]]
-				}
 			}
 
 			if (internalPayList.value.length > 0) {
@@ -1049,7 +929,7 @@
 	<scroll-view class="popup-scroll" scroll-y :show-scrollbar="true">
 	<view class="px-15">
 		<h1 class="h-54 flex items-center justify-center text-17 text-T333333 font-500">
-			小柠檬
+			青柠助手
 		</h1>
 
 		<!-- 激活类型选择（特殊续费类型时不显示，续费时不显示） -->

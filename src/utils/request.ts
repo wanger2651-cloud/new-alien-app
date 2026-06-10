@@ -12,6 +12,8 @@ import {
 	bytesToJson,
 	buildRouteWithParams
 } from '@/utils/encApi.js'
+import { extractApiErrorMessage } from '@/utils/apiMessage'
+import { clearAuthSession } from '@/utils/authSession'
 
 let authStore : any = null
 function getAuthStore() {
@@ -127,9 +129,9 @@ const responseInterceptor = (res : ResponseResult) => {
 			duration: 2000, //提示的延迟时间，单位毫秒，默认：1500
 			mask: false, //是否显示透明蒙层，防止触摸穿透，默认：false 
 		});
-		getAuthStore().clearToken()
+		clearAuthSession()
 		setTimeout(() => {
-			uni.navigateTo({
+			uni.reLaunch({
 				url: '/pages/login/chooseUser'
 			});
 		}, 2000)
@@ -139,17 +141,7 @@ const responseInterceptor = (res : ResponseResult) => {
 	}
 	// 请求接口错误
 	if (res.statusCode !== 200) {
-		// 安全地提取错误消息，确保是字符串
-		let errorMsg = `请求失败 (状态码: ${res.statusCode})`
-		if (res.data) {
-			if (typeof res.data.message === 'string') {
-				errorMsg = res.data.message
-			} else if (typeof res.data.Msg === 'string') {
-				errorMsg = res.data.Msg
-			} else if (typeof res.data.msg === 'string') {
-				errorMsg = res.data.msg
-			}
-		}
+		let errorMsg = extractApiErrorMessage(res.data, `请求失败 (状态码: ${res.statusCode})`)
 		console.error('请求接口错误:', {
 			statusCode: res.statusCode,
 			url: res.config?.url,
@@ -207,15 +199,7 @@ const responseInterceptor = (res : ResponseResult) => {
 		// 只有当 Success 明确为 false 时才抛出错误
 		// 如果 Success 不存在，但有 data 数组，说明是成功响应（实际API格式）
 		if (res.data.Success === false) {
-			// 安全地提取错误消息，确保是字符串
-			let errorMsg = '请求失败'
-			if (typeof res.data.message === 'string') {
-				errorMsg = res.data.message
-			} else if (typeof res.data.Msg === 'string') {
-				errorMsg = res.data.Msg
-			} else if (typeof res.data.msg === 'string') {
-				errorMsg = res.data.msg
-			}
+			const errorMsg = extractApiErrorMessage(res.data, '请求失败')
 			uni.showModal({
 				title: '提示',
 				content: String(errorMsg),

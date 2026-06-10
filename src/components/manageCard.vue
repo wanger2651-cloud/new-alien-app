@@ -6,7 +6,7 @@
 				<image src="../static/shop/icon_013a.png" class="logoImg" mode="" v-if="logoText === 'IM自动回复'"></image>
 				<image src="../static/shop/icon_014a.png" class="logoImg" mode="" v-if="logoText === '自动回评'"></image>
 				<image src="../static/shop/icon_015a.png" class="logoImg" mode="" v-if="logoText === '智能推广'"></image>
-				<view class="logoText" :class="{'jd-group-func-name': isJdGroupFunc() || isJdMiaosongBatchFunc()}">{{ logoText }}</view>
+				<view class="logoText" :class="{'jd-group-func-name': isJdGroupFunc()}">{{ logoText }}</view>
 				<view class="twoRight">
 					<view class="rightText">到期时间：</view>
 					<view class="rightTime">{{filterTime(time) || '已到期'}}</view>
@@ -97,7 +97,7 @@
 					</view>
 				</view>
 			</view>
-			<view class="button-group" :class="{'button-group-right': isJdGroupFunc() || isJdMiaosongBatchFunc()}">
+			<view class="button-group" :class="{'button-group-right': isJdGroupFunc()}">
 				<view class="pzBut" @tap="toService" :class="{'is-elm': shopType == 2}">{{ getConfigButtonText() }}</view>
 				<view class="pzBut" @tap="itemAddMoney" :class="{'is-elm': shopType == 2}">续费</view>
 			</view>
@@ -1004,8 +1004,8 @@
 		'statusDesc', 'currentItem', 'elmQueryShopRealtimeInfo', 'serviceCookingUpload', 'currentMedal', 'disabled', 'shopId'
 	]);
 	const toService = async () => {
-		// 京东团购功能和京东秒送批量管理功能：执行功能
-		if (isJdGroupFunc() || isJdMiaosongBatchFunc()) {
+		// 京东团购功能：执行功能
+		if (isJdGroupFunc()) {
 			const expired = isFuncExpired()
 			
 			// 如果已到期，提示续费开通
@@ -2747,29 +2747,10 @@
 	
 	// 常量：京东团购功能代码
 	const JD_GROUP_FUNC_CODES = ['JD_GROUP_OPEN', 'JD_GROUP_BIND']
-	// 常量：京东秒送批量/运营功能代码
-	const JD_MIAOSONG_BATCH_FUNC_CODES = [
-		'CATEGORY_ATTR',
-		'BATCH_PRICE',
-		'BATCH_STOCK',
-		'BATCH_NAME',
-		'BATCH_STATUS',
-		'CREATEFREIGHTPROMO',
-		'CREATEBILLIONSUBSIDYCOUPON',
-		'CREATEINSHOPCOUPON',
-		'CREATEMANJIAN',
-		'CREATEBRANDMEALCARD',
-		'UPDATESTOREBUSINESSTIME'
-	]
 	// 后端功能代码映射
 	const BACKEND_FUNC_CODE_MAP = {
 		'JD_GROUP_OPEN': 'SIGNTUANGOU',
 		'JD_GROUP_BIND': 'PUBLISHDRAFTTUANGOU',
-		'CATEGORY_ATTR': 'CTGYPRTYMG',
-		'BATCH_PRICE': 'BATCHUPDATEPRICE',
-		'BATCH_STOCK': 'BATCHUPDATESTOCK',
-		'BATCH_NAME': 'BATCHUPDATENAME',
-		'BATCH_STATUS': 'BATCHUPDATESTATE'
 	}
 	
 	// 常量：与上一页店铺卡片开关保持同步的基础功能代码
@@ -2781,15 +2762,9 @@
 		return JD_GROUP_FUNC_CODES.includes(code)
 	}
 	
-	// 判断是否为京东秒送批量管理功能
-	const isJdMiaosongBatchFunc = () => {
-		const code = props.currentItem?.code
-		return JD_MIAOSONG_BATCH_FUNC_CODES.includes(code)
-	}
-	
-	// 获取配置按钮文本：京东团购和京东秒送批量管理功能显示"执行"，其他功能显示"配置"
+	// 获取配置按钮文本：京东团购功能显示"执行"，其他功能显示"配置"
 	const getConfigButtonText = () => {
-		return (isJdGroupFunc() || isJdMiaosongBatchFunc()) ? '执行' : '配置'
+		return isJdGroupFunc() ? '执行' : '配置'
 	}
 	
 	// 判断功能是否已到期

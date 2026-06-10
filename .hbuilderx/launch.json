@@ -20,6 +20,14 @@
         {
             "playground" : "standard",
             "type" : "uni-app:app-ios"
+        },
+        {
+            "playground" : "standard",
+            "type" : "uni-app:app-harmony"
+        },
+        {
+            "playground" : "standard",
+            "type" : "uni-app:mp-weixin"
         }
     ]
 }

@@ -1,8 +1,10 @@
 <template>
 	<view class="mLogin">
-		<wd-navbar left-text="返回上一页" left-arrow @click-left="handleClickLeft" :style="`padding-top: calc(${systemBarHeight}px);`"></wd-navbar>
+		<view class="top-bar" :style="{ paddingTop: (systemBarHeight + 8) + 'px' }" @tap="handleClickLeft">
+			<text class="back-text">‹ 返回上一页</text>
+		</view>
 		<view class="textOne">HI～ 您好！</view>
-		<view class="textTwo">欢迎登录小柠檬{{pageText}}</view>
+		<view class="textTwo">欢迎登录青柠助手{{pageText}}</view>
 		<view class="login-card">
 			<view class="login-tabs">
 				<view class="login-tab-item" :class="{ active: loginParams.loginMode === 'password' }"
@@ -15,22 +17,22 @@
 				</view>
 			</view>
 			<view class="phone">
-				<inputItem v-model:title="loginParams.phone" type="text" :placeholderText="'请输入账号或手机号'"
+				<inputItem v-model:title="loginParams.phone" type="account" :placeholderText="'请输入账号或手机号'"
 					:imgSrc="'../../static/choose/phone.png'" @replaceStr="replaceStr" />
-				<inputItem v-model:title="loginParams.pwd" :type="loginParams.loginMode === 'ga' ? 'number' : 'password'"
+				<inputItem v-model:title="loginParams.pwd" :type="loginParams.loginMode === 'ga' ? 'digit' : 'password'"
 					:placeholderText="loginParams.loginMode === 'ga' ? '请输入腾讯令牌验证码' : '请输入密码'"
 					:imgSrc="'../../static/choose/mima.png'" @replaceStr="replacePassWordStr" />
 				<!-- 账号密码登录模式下，账号密码校验通过且需要谷歌验证码时，显示6位验证码输入框 -->
 				<inputItem v-if="loginParams.loginMode === 'password' && needGaCode"
 					v-model:title="loginParams.gaCode"
-					type="number"
+					type="digit"
 					:placeholderText="'请输入腾讯令牌6位验证码'"
 					:imgSrc="'../../static/choose/mima.png'"
 					@replaceStr="replaceGaCode" />
-				<inputItem v-if="phoneState" v-model:title="loginParams.bind_phone" type="text" :placeholderText="'请输入手机号'"
+				<inputItem v-if="phoneState" v-model:title="loginParams.bind_phone" type="phone" :placeholderText="'请输入手机号'"
 					:imgSrc="'../../static/choose/mima.png'" @replaceStr="replacePhone" />
 				<view v-if="phoneState" style="position: relative;">
-					<inputItem v-model:title="loginParams.code" type="text" :yzmFlage="true" :timenum="timenum2"
+					<inputItem v-model:title="loginParams.code" type="digit" :yzmFlage="true" :timenum="timenum2"
 						:placeholderText="'请输入验证码'" :imgSrc="'../../static/choose/mima.png'" @replaceStr="replaceCode"
 						@changeStr="getCode" />
 				</view>
@@ -86,11 +88,12 @@
 				</view> -->
 			</view>
 		</view>
+		<PrivacyAgreeBar v-model="privacyAgreed" />
 		<view class="loginBut" @click="toLogin">登录</view>
 		<view class="footer">
-			<view class="footerText" @click="forget">忘记密码？</view>
-			<view class="footerText" @click="openOnlineService">在线客服</view>
-			<view class="footerText" @click="toReg">立即注册</view>
+			<view class="footerText" @tap="forget">忘记密码？</view>
+			<view class="footerText" @tap="openOnlineService">在线客服</view>
+			<view class="footerText" @tap="toReg">立即注册</view>
 		</view>
 		
 		<!-- 谷歌验证器绑定二维码弹窗 -->
@@ -159,7 +162,8 @@
 <script setup>
 	import {
 		onLoad,
-		onShow
+		onShow,
+		onBackPress
 	} from '@dcloudio/uni-app';
 	import {
 		reactive,
@@ -174,7 +178,14 @@
 	} from 'process';
 	import { HomeApi } from '@/api/home';
 	import { getLineApiUrl } from '@/config/lineConfig';
+	import { saveRegisterInviteCode } from '@/utils/registerInvite'
+	import { applyAuthSession, clearAuthSession } from '@/utils/authSession';
 	import { openOnlineService } from '@/utils/onlineService';
+	import PrivacyAgreeBar from '@/components/PrivacyAgreeBar.vue';
+	import inputItem from '@/components/inputItem.vue';
+	import { ensureLoginPrivacyAgreed } from '@/utils/privacyConsent';
+	import { isAuditLoginPhone } from '@/config/auditLoginConfig';
+	import { ensureApiLineConfig } from '@/utils/ensureApiLine';
 
 	const pageText = ref('')
 	const pageFlag = ref('')
@@ -206,8 +217,10 @@
 	const hasShownGaBindModal = ref(false)
 	// 教程图片弹窗相关
 	const showTutorialModal = ref(false)
+	const privacyAgreed = ref(false)
 
 	onLoad((e) => {
+		ensureApiLineConfig()
 		getSysteminfo()
 		// 商家版已移除，只保留运营端
 		pageText.value = '运营端'
@@ -347,9 +360,68 @@
 		});
 	}
 	const toReg = () => {
-		uni.navigateTo({
+		uni.redirectTo({
 			url: '/pages/login/register?peageFlag=' + pageFlag.value
 		});
+	}
+
+	const cacheLoginInviteCode = (data) => {
+		if (!data) return
+		const invite = data.Invite_Code ?? data.invite_Code ?? data.InviteCode ?? data.inviteCode
+		const team = data.Team_Id ?? data.team_Id ?? data.TeamId ?? data.teamId
+		saveRegisterInviteCode(invite ?? team)
+	}
+
+	const completePasswordLogin = (data, successMessage = '登录成功') => {
+		if (!data?.Token) {
+			showErrorModal('登录失败：未获取到有效凭证，请联系管理员')
+			return false
+		}
+		applyAuthSession(data.Token, data.UserInfo?.UserId)
+		cacheLoginInviteCode(data)
+		uni.setStorage({
+			key: 'loginParams',
+			data: { phone: loginParams.phone },
+			success: function() {}
+		})
+		showToast('success', successMessage)
+		if (pageFlag.value === '2') {
+			uni.navigateTo({ url: '/pages/master-index/master-index' })
+		}
+		return true
+	}
+
+	const shouldCompleteDirectLogin = (data, phone = loginParams.phone) => {
+		if (!data?.Token) {
+			return false
+		}
+		if (isAuditLoginPhone(phone)) {
+			return true
+		}
+		const resultType = data.ResultType
+		if (resultType === 6 || resultType === '6') {
+			return false
+		}
+		if (resultType === 4 || resultType === '4') {
+			return false
+		}
+		if (data.RequireGoogleAuthenticator === true) {
+			return false
+		}
+		return true
+	}
+
+	const shouldForceGoogleAuthenticatorFlow = (data, phone = loginParams.phone) => {
+		if (isAuditLoginPhone(phone)) {
+			return false
+		}
+		if (shouldCompleteDirectLogin(data, phone)) {
+			return false
+		}
+		const resultType = data?.ResultType
+		return resultType === 7 || resultType === '7'
+			|| resultType === 8 || resultType === '8'
+			|| data?.RequireGoogleAuthenticator === true
 	}
 
 	const showToast = (type, title) => {
@@ -409,6 +481,11 @@
 				}
 				const data = res.data.data
 				// console.log('重新检查绑定状态 - AgencyLogin 返回:', JSON.stringify(data, null, 2))
+
+				if (shouldCompleteDirectLogin(data, phone)) {
+					completePasswordLogin(data)
+					return
+				}
 				
 				// 根据 ResultType 判断
 				if (data.ResultType === 7) {
@@ -606,6 +683,9 @@
 	}
 
 	const toLogin = async () => {
+		if (!ensureLoginPrivacyAgreed(privacyAgreed.value)) {
+			return
+		}
 		if (!pageFlag.value) {
 			uni.showModal({
 				title: '提示',
@@ -697,8 +777,8 @@
 					
 					const data = res.data.data
 					const token = data.Token
-					authStore.setToken(token)
-					authStore.setUserId(data.UserInfo.UserId)
+					applyAuthSession(token, data.UserInfo?.UserId)
+					cacheLoginInviteCode(data)
 					uni.setStorage({
 						key: 'loginParams',
 						data: { phone },
@@ -742,8 +822,8 @@
 					}
 					const data = res.data.data
 					const token = data.Token
-					authStore.setToken(token)
-					authStore.setUserId(data.UserInfo.UserId)
+					applyAuthSession(token, data.UserInfo?.UserId)
+					cacheLoginInviteCode(data)
 					uni.setStorage({
 						key: 'loginParams',
 						data: { phone },
@@ -792,6 +872,21 @@
 				if (data.ResultType === 6) {
 					phoneState.value = true
 					return showToast('error', '请绑定手机号')
+				}
+
+				// 后端白名单/审核账号等：只要返回 Token 且无需令牌，直接登录
+				if (shouldCompleteDirectLogin(data, phone)) {
+					completePasswordLogin(data)
+					return
+				}
+
+				if (!shouldForceGoogleAuthenticatorFlow(data, phone)) {
+					if (data.Token) {
+						completePasswordLogin(data)
+					} else {
+						showErrorModal('登录失败：未获取到有效凭证，请联系管理员')
+					}
+					return
 				}
 
 				// 根据 AgencyLogin 接口返回的 ResultType 判断绑定状态
@@ -871,67 +966,10 @@
 					// console.log('检测到用户已绑定 Google Authenticator (ResultType === 8 或 RequireGoogleAuthenticator === true)')
 					needGaCode.value = true
 					showToast('success', '账号密码验证通过，请输入谷歌验证码')
+				} else if (data.Token) {
+					completePasswordLogin(data)
 				} else {
-					// 其他情况：可能是 ResultType === 0 (None) 或 ResultType === 5 (验证成功)
-					// 为了安全起见，无论 ResultType 是什么值，都应该检查绑定状态
-					// 如果系统要求必须绑定 Google Authenticator，未绑定的账号不应该直接登录成功
-					// console.log('AgencyLogin 返回的 ResultType:', data.ResultType, 'RequireGoogleAuthenticator:', data.RequireGoogleAuthenticator)
-					
-					// 调用 BindGoogleAuthenticatorOnLogin 检查绑定状态
-					// 如果返回二维码，说明未绑定，需要显示二维码弹窗
-					// 如果返回错误或无二维码，说明已绑定，需要输入验证码
-					// console.log('检查绑定状态，确保未绑定令牌的账号不会直接登录')
-					uni.request({
-						url: apiUrl + 'Admin/BindGoogleAuthenticatorOnLogin',
-						method: 'POST',
-						data: { phone, pwd },
-						header: { 'Content-Type': 'application/json' },
-						success: (gaRes) => {
-							// console.log('BindGoogleAuthenticatorOnLogin 检查结果:', JSON.stringify(gaRes.data, null, 2))
-							
-							// 如果返回成功且有二维码数据，说明用户未绑定，需要显示二维码弹窗
-							if (gaRes.data && gaRes.data.code === 200 && gaRes.data.data) {
-								const gaData = gaRes.data.data
-								let qrUrl = gaData.QrCodeUrl || gaData.qrCodeUrl || gaData.QrCode || gaData.qrCode || 
-										gaData.QrCodeImage || gaData.qrCodeImage || gaData.Image || gaData.image || gaData.OtpAuthUrl || gaData.otpAuthUrl || ''
-								
-								if (qrUrl) {
-									// 有二维码，说明未绑定，显示二维码弹窗（即使有 Token 也不允许直接登录）
-									// console.log('检测到未绑定令牌，显示二维码弹窗')
-									if (qrUrl.startsWith('otpauth://')) {
-										qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' + encodeURIComponent(qrUrl)
-									} else if (!qrUrl.startsWith('http') && !qrUrl.startsWith('data:image')) {
-										if (/^[A-Za-z0-9+/=]+$/.test(qrUrl)) {
-											qrUrl = 'data:image/png;base64,' + qrUrl
-										} else if (qrUrl.startsWith('/')) {
-											qrUrl = apiUrl.replace(/\/$/, '') + qrUrl
-										}
-									}
-									gaQrUrl.value = qrUrl
-									gaSecret.value = gaData.SecretKey || gaData.secretKey || gaData.Key || gaData.key || ''
-									gaFirstCode.value = gaData.FirstCode || gaData.firstCode || gaData.Code || gaData.code || ''
-									showGaBindModal.value = true
-									showToast('info', '请绑定腾讯令牌')
-								} else {
-									// 没有二维码，视为已绑定，显示验证码输入框
-									// console.log('检测到已绑定令牌，显示验证码输入框')
-									needGaCode.value = true
-									showToast('success', '账号密码验证通过，请输入谷歌验证码')
-								}
-							} else {
-								// 接口返回错误，说明已绑定，显示验证码输入框
-								// console.log('BindGoogleAuthenticatorOnLogin 返回错误，视为已绑定')
-							needGaCode.value = true
-							showToast('success', '账号密码验证通过，请输入谷歌验证码')
-						}
-					},
-						fail: () => {
-							// 接口失败，视为已绑定，显示验证码输入框
-							// console.log('BindGoogleAuthenticatorOnLogin 请求失败，视为已绑定')
-						needGaCode.value = true
-						showToast('success', '账号密码验证通过，请输入谷歌验证码')
-					}
-				})
+					showErrorModal('登录失败：未获取到有效凭证，请联系管理员')
 				}
 			},
 			fail: () => {
@@ -940,12 +978,17 @@
 		})
 	}
 	const handleClickLeft = () => {
-		authStore.clearToken()
-		uni.navigateTo({
+		clearAuthSession()
+		uni.reLaunch({
 			url: '/pages/login/chooseUser',
 			animationType: 'slide-in-left',
 		});
 	}
+
+	onBackPress(() => {
+		handleClickLeft()
+		return true
+	})
 	onShow(() => {
 		// uni.getStorage({
 		// 	key: 'loginParams',
@@ -957,19 +1000,25 @@
 </script>
 
 <style scoped lang="scss">
-	::v-deep .wd-navbar.is-border[data-v-605aecd5]::after {
-		background: transparent !important;
-	}
-
 	.mLogin {
 		min-height: 100vh;
 		box-sizing: border-box;
+
+		.top-bar {
+			padding: 8px 32rpx 12rpx;
+		}
+
+		.back-text {
+			font-size: 30rpx;
+			color: #333;
+			line-height: 48rpx;
+		}
 
 		.textOne {
 			font-weight: 500;
 			font-size: 38rpx;
 			color: #333333;
-			margin: 80rpx 0 12rpx 46rpx;
+			margin: 24rpx 0 12rpx 46rpx;
 		}
 
 		.textTwo {
@@ -1168,6 +1217,7 @@
 			.footerText {
 				font-size: 28rpx;
 				color: #333333;
+				padding: 16rpx 8rpx;
 			}
 		}
 

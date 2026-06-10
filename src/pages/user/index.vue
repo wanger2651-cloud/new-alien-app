@@ -1,18 +1,20 @@
 <template>
-	<view class="user">
+	<view class="user" :class="{ 'user--tab': embeddedTab }">
 		<image src="../../static/user/userBg_001.png" class="teachBg" mode=""></image>
-		<view class="page-container" :style="`padding-top: calc(${systemBarHeight}px);`">
+		<view class="page-container" :style="pageContainerStyle">
 			<view class="nav-bar-main">
 				<view class="nav-bar-left">账号概览</view>
-				<view class="nav-bar-right">
-					<image src="@/static/shop/icon_021a.png" mode="" class="nav-bar-img"></image>
-					<image src="@/static/shop/icon_022a.png" mode="" class="nav-bar-img"></image>
+				<view class="nav-bar-right header-actions">
+					<view class="service-action" @click="openOnlineService">客服</view>
+					<view class="notice-action" @click="openLog">
+						<image src="@/static/shop/m_info.png" class="notice-icon" mode="aspectFit"></image>
+					</view>
 				</view>
 			</view>
-			<view class="page-main" :style="`height: calc(100vh - ${systemBarHeight}px - 114px - env(safe-area-inset-bottom));`">
+			<view class="page-main" :style="pageMainStyle">
 				<view class="header">
 					<view class="handerOne">
-						<!-- 个人中心头像使用小柠檬 logo -->
+						<!-- 个人中心头像使用青柠助手 logo -->
 						<image src="@/static/user/jihu-logo.png" class="logo" mode=""></image>
 						<view class="logoText">
 							<view class="user-name">
@@ -47,22 +49,27 @@
 				<view class="shopBox">
 				<!-- 门店数量统计标题 -->
 				<view class="shop-title">门店数量统计</view>
-				<!-- 第一行：显示前4种店铺类型 -->
-				<view class="shopRow">
-					<view class="shopItem" v-for="item in firstRowShops" :key="item.ShopType" :style="getShopBgStyle(item.ShopType)">
-						<image v-if="getShopLogo(item.ShopType)" :src="getShopLogo(item.ShopType)" class="shopIcon" mode="aspectFit"></image>
-						<view class="shopNum">{{ getShopCount(item) }}</view>
-						<view class="shopText">{{ getShopTitle(item) }}</view>
+				<view class="shopRow" v-for="(row, rowIndex) in shopStatRows" :key="'shop-row-' + rowIndex">
+					<view
+						v-for="cell in row"
+						:key="cell.type === 'tutorial' ? 'app-tutorial' : cell.data.ShopType"
+						class="shopItem"
+						:class="{ 'tutorial-item': cell.type === 'tutorial' }"
+						:style="cell.type === 'tutorial' ? tutorialCardStyle : getShopBgStyle(cell.data.ShopType)"
+						@click="cell.type === 'tutorial' ? toAppTutorial() : null"
+					>
+						<template v-if="cell.type === 'shop'">
+							<image v-if="getShopLogo(cell.data.ShopType)" :src="getShopLogo(cell.data.ShopType)" class="shopIcon" mode="aspectFit"></image>
+							<view class="shopNum">{{ getShopCount(cell.data) }}</view>
+							<view class="shopText">{{ getShopTitle(cell.data) }}</view>
+						</template>
+						<template v-else>
+							<image src="@/static/user/jihu-logo.png" class="shopIcon tutorial-icon" mode="aspectFit"></image>
+							<view class="shopNum tutorial-num">视频</view>
+							<view class="shopText">青柠助手使用教程</view>
+						</template>
 					</view>
 				</view>
-				<!-- 第二行：显示剩余3种店铺类型 -->
-				<view class="shopRow" v-if="secondRowShops.length > 0">
-					<view class="shopItem" v-for="item in secondRowShops" :key="item.ShopType" :style="getShopBgStyle(item.ShopType)">
-						<image v-if="getShopLogo(item.ShopType)" :src="getShopLogo(item.ShopType)" class="shopIcon" mode="aspectFit"></image>
-						<view class="shopNum">{{ getShopCount(item) }}</view>
-						<view class="shopText">{{ getShopTitle(item) }}</view>
-					</view>
-					</view>
 				</view>
 				<view class="box-title">
 					团队管理
@@ -119,6 +126,7 @@
 				<view class="sign-out" @click="signOut">
 					退出当前账号
 				</view>
+				<IcpFooter />
 
 			</view>
 			<view class="tips" v-if="tipsShow">
@@ -149,6 +157,22 @@
 					确认注销</wd-button>
 			</view>
 		</wd-popup> -->
+		<wd-popup v-model="logState" position="center" closable
+			custom-style="width: 80%;max-height: 800rpx;border-radius: 20rpx;padding: 30rpx;" @close="logClose"
+			:z-index="601">
+			<view class="log-container">
+				<view class="log-title">
+					历史公告
+				</view>
+				<view class="log-main">
+					<view class="log-item" v-for="item in logList" :key="item.id">
+						<view class="log-item-name">{{ item.name }}</view>
+						<view class="log-item-time">{{ item.crtim }}</view>
+						<view class="log-item-content" v-html="item.content"></view>
+					</view>
+				</view>
+			</view>
+		</wd-popup>
 	</view>
 </template>
 
@@ -156,6 +180,7 @@
 	import {
 		ref,
 		onMounted,
+		onUnmounted,
 		reactive,
 		watch,
 		computed
@@ -164,6 +189,9 @@
 		UserApi
 	} from '@/api/login'
 	import {
+		HomeApi
+	} from '@/api/home'
+	import {
 		useAuthStore
 	} from '@/store/auth.ts'
 	import {
@@ -171,6 +199,15 @@
 		onLoad
 	} from '@dcloudio/uni-app';
 	import { openOnlineService } from '@/utils/onlineService'
+	import { clearAuthSession, USER_SESSION_CHANGED_EVENT } from '@/utils/authSession'
+	import IcpFooter from '@/components/IcpFooter.vue'
+
+	const props = defineProps({
+		embeddedTab: {
+			type: Boolean,
+			default: false
+		}
+	})
 
 	const authStore = useAuthStore()
 	const userInfo = ref({})
@@ -180,6 +217,26 @@
 	const countDown = ref(5)
 	const countDownInterval = ref()
 	const systemBarHeight = ref(0)
+	const pageContainerStyle = computed(() => {
+		if (props.embeddedTab) {
+			return { paddingTop: `${systemBarHeight.value}px` }
+		}
+		return { paddingTop: `calc(${systemBarHeight.value}px)` }
+	})
+	const pageMainStyle = computed(() => {
+		if (props.embeddedTab) {
+			return {
+				height: `calc(100% - ${systemBarHeight.value}px - 88rpx)`,
+				overflowY: 'auto'
+			}
+		}
+		return {
+			height: `calc(100vh - ${systemBarHeight.value}px - 114px - env(safe-area-inset-bottom))`,
+			overflowY: 'scroll'
+		}
+	})
+	const logState = ref(false)
+	const logList = ref([])
 	
 	// 店铺类型到Logo的映射（与storeManage.vue中的映射保持一致）
 	const shopTypeToLogo = {
@@ -333,21 +390,31 @@
 		return title
 	}
 	
-	// 第一行店铺（前4个）
-	const firstRowShops = computed(() => {
-		if (!userInfo.value.count_shop_type || !Array.isArray(userInfo.value.count_shop_type)) {
-			return []
-		}
-		return userInfo.value.count_shop_type.slice(0, 4)
+	const tutorialCardStyle = {
+		background: 'linear-gradient(135deg, #FFF9E6 0%, #FFFFFF 100%)'
+	}
+
+	// 门店统计卡片：平台卡片 + 教程卡片（教程始终排在最后）
+	const shopStatItems = computed(() => {
+		const shops = Array.isArray(userInfo.value.count_shop_type) ? userInfo.value.count_shop_type : []
+		const shopCells = shops.map((shop) => ({ type: 'shop', data: shop }))
+		return [...shopCells, { type: 'tutorial' }]
 	})
-	
-	// 第二行店铺（剩余3个）
-	const secondRowShops = computed(() => {
-		if (!userInfo.value.count_shop_type || !Array.isArray(userInfo.value.count_shop_type)) {
-			return []
+
+	const shopStatRows = computed(() => {
+		const items = shopStatItems.value
+		const rows = []
+		for (let i = 0; i < items.length; i += 4) {
+			rows.push(items.slice(i, i + 4))
 		}
-		return userInfo.value.count_shop_type.slice(4, 7)
+		return rows
 	})
+
+	const toAppTutorial = () => {
+		uni.navigateTo({
+			url: '/pages/user/app-tutorial'
+		})
+	}
 
 	// 总账号可见：用于控制“后台反馈”入口
 	const isMainAccount = computed(() => {
@@ -409,8 +476,8 @@
 					duration: 2000 // 显示持续时间，单位为毫秒
 				})
 				setTimeout(() => {
-					authStore.clearToken()
-					uni.navigateTo({
+					clearAuthSession()
+					uni.reLaunch({
 						url: '/pages/login/chooseUser'
 					});
 				}, 2000)
@@ -448,12 +515,14 @@
 	}
 
 	const getUserInfo = async () => {
+		userInfoLoaded.value = false
+		userInfo.value = {}
 		uni.showLoading({})
 		try {
 			const data = await UserApi.getUser()
-			userInfo.value = data.data
+			userInfo.value = data.data || {}
 		} catch {
-			console.log(15555)
+			console.log('getUserInfo failed')
 		} finally {
 			userInfoLoaded.value = true
 			uni.hideLoading({})
@@ -472,8 +541,8 @@
 			success: function(res) {
 				// 用户点击了哪个按钮
 				if (res.confirm) {
-					authStore.clearToken()
-					uni.navigateTo({
+					clearAuthSession()
+					uni.reLaunch({
 						url: '/pages/login/chooseUser'
 					});
 					// 在这里执行确定后的逻辑
@@ -511,7 +580,38 @@
 
 	onMounted(() => {
 		getUserInfo()
+		getNoticeNewItem()
+		uni.$on(USER_SESSION_CHANGED_EVENT, getUserInfo)
 	})
+
+	onUnmounted(() => {
+		uni.$off(USER_SESSION_CHANGED_EVENT, getUserInfo)
+	})
+
+	defineExpose({
+		refreshUserInfo: getUserInfo
+	})
+
+	const openLog = () => {
+		logState.value = true
+	}
+
+	const logClose = () => {
+		logState.value = false
+	}
+
+	const getNoticeNewItem = () => {
+		HomeApi.getlistorderbyctime({
+			pagesize: 10,
+			pageindex: 1,
+			type: 1,
+			state: 0
+		}).then(res => {
+			if (res.code === 200 && res.data?.rows?.length) {
+				logList.value = res.data.rows
+			}
+		}).catch(() => {})
+	}
 
 	onLoad(() => {
 		getSysteminfo()
@@ -546,6 +646,25 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+
+	&.user--tab {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 100%;
+		min-height: 0;
+		width: 100%;
+		overflow: hidden;
+
+		.page-container {
+			position: relative;
+			left: auto;
+			top: auto;
+			height: 100%;
+		}
+	}
 
 		.header {
 			width: 100%;
@@ -700,18 +819,22 @@
 			.shopRow {
 				display: flex;
 				flex-direction: row;
-			justify-content: space-between;
+				flex-wrap: wrap;
+				justify-content: flex-start;
+				align-items: stretch;
 				width: 100%;
 				gap: 20rpx;
 			}
 
 			.shopItem {
-				flex: 1;
+				flex: 0 0 calc((100% - 60rpx) / 4);
+				width: calc((100% - 60rpx) / 4);
 				display: flex;
 				flex-direction: column;
 				align-items: center;
 				justify-content: center;
 				min-width: 0;
+				min-height: 148rpx;
 				border-radius: 12rpx;
 				/* 减小内边距，整体卡片高度更紧凑 */
 				padding: 16rpx 14rpx;
@@ -733,6 +856,20 @@
 					line-height: 1.3;
 					margin-bottom: 4rpx;
 					text-align: center;
+				}
+
+				&.tutorial-item {
+					cursor: pointer;
+				}
+
+				.tutorial-icon {
+					border-radius: 12rpx;
+				}
+
+				.tutorial-num {
+					font-size: 28rpx;
+					font-weight: 600;
+					color: #f59e0b;
 				}
 
 				.shopText {
@@ -855,12 +992,73 @@
 		.nav-bar-right {
 			display: flex;
 			align-items: center;
+		}
 
-			.nav-bar-img {
-				width: 30rpx;
-				height: 30rpx;
-				margin-left: 40rpx;
-			}
+		.header-actions {
+			display: flex;
+			align-items: center;
+			gap: 18rpx;
+		}
+
+		.service-action {
+			height: 44rpx;
+			padding: 0 18rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #333333;
+			font-size: 24rpx;
+			background-color: rgba(255, 255, 255, 0.9);
+			border-radius: 22rpx;
+		}
+
+		.notice-action {
+			width: 40rpx;
+			height: 40rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.notice-icon {
+			width: 40rpx;
+			height: 40rpx;
+		}
+	}
+
+	.log-container {
+		.log-title {
+			font-size: 36rpx;
+			text-align: center;
+			margin-bottom: 30rpx;
+		}
+
+		.log-main {
+			max-height: 720rpx;
+			overflow-y: scroll;
+		}
+
+		.log-item {
+			padding-bottom: 30rpx;
+			border-bottom: 1rpx solid #e5e5e5;
+			margin-bottom: 30rpx;
+		}
+
+		.log-item:last-child {
+			border: none;
+			margin-bottom: 0;
+		}
+
+		.log-item-name {
+			font-size: 28rpx;
+			color: #333333;
+			margin-bottom: 10rpx;
+		}
+
+		.log-item-time {
+			font-size: 24rpx;
+			color: #999999;
+			margin-bottom: 20rpx;
 		}
 	}
 
