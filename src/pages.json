@@ -3,7 +3,13 @@
 		"autoscan": true,
 		"custom": {
 			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue",
-			"^inputItem$": "@/components/inputItem.vue"
+			"^inputItem$": "@/components/inputItem.vue",
+			"^SettingPopupPlanContent$": "@/components/SettingPopupPlanContent.vue",
+			"^manageCard$": "@/components/manageCard.vue",
+			"^ManageCard$": "@/components/manageCard.vue",
+			"^IcpFooter$": "@/components/IcpFooter.vue",
+			"^PrivacyAgreeBar$": "@/components/PrivacyAgreeBar.vue",
+			"^PrivacyConsentDialog$": "@/components/PrivacyConsentDialog.vue"
 		}
 	},
 	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages

@@ -78,8 +78,10 @@
 		}
 		// #endif
 		
-		// #ifndef APP-PLUS
-		// 非 APP 环境，使用默认版本
+		// #ifdef MP-WEIXIN
+		currentVersion.value = '1.0.12'
+		// #endif
+		// #ifdef H5
 		currentVersion.value = '1.0.0'
 		// #endif
 	}
@@ -129,7 +131,7 @@
 		// 	text: "我是商家"
 		// },
 		{
-			image: "../../static/choose/yy.png",
+			image: "/static/choose/yy.png",
 			text: "欢迎使用"
 		}
 	]
