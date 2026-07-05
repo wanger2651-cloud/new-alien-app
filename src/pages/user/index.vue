@@ -1,5 +1,5 @@
 <template>
-	<view class="user" :class="{ 'user--tab': embeddedTab }">
+	<view class="user" :class="{ 'user--tab': isMpTabLayout }">
 		<image src="../../static/user/userBg_001.png" class="teachBg" mode=""></image>
 		<view class="page-container" :style="pageContainerStyle">
 			<view class="nav-bar-main">
@@ -173,10 +173,16 @@
 				</view>
 			</view>
 		</wd-popup>
+		<!-- #ifdef MP-WEIXIN -->
+		<MpTabBar v-if="mpTabMode" active="user" />
+		<!-- #endif -->
 	</view>
 </template>
 
 <script setup>
+	// #ifdef MP-WEIXIN
+	import MpTabBar from '@/components/MpTabBar.vue'
+	// #endif
 	import {
 		ref,
 		onMounted,
@@ -209,6 +215,9 @@
 		}
 	})
 
+	const mpTabMode = ref(false)
+	const isMpTabLayout = computed(() => props.embeddedTab || mpTabMode.value)
+
 	const authStore = useAuthStore()
 	const userInfo = ref({})
 	const userInfoLoaded = ref(false)
@@ -218,13 +227,13 @@
 	const countDownInterval = ref()
 	const systemBarHeight = ref(0)
 	const pageContainerStyle = computed(() => {
-		if (props.embeddedTab) {
+		if (isMpTabLayout.value) {
 			return { paddingTop: `${systemBarHeight.value}px` }
 		}
 		return { paddingTop: `calc(${systemBarHeight.value}px)` }
 	})
 	const pageMainStyle = computed(() => {
-		if (props.embeddedTab) {
+		if (isMpTabLayout.value) {
 			return {
 				height: `calc(100% - ${systemBarHeight.value}px - 88rpx)`,
 				overflowY: 'auto'
@@ -579,6 +588,9 @@
 	})
 
 	onMounted(() => {
+		if (isMpTabLayout.value) {
+			getSysteminfo()
+		}
 		getUserInfo()
 		getNoticeNewItem()
 		uni.$on(USER_SESSION_CHANGED_EVENT, getUserInfo)
@@ -613,7 +625,10 @@
 		}).catch(() => {})
 	}
 
-	onLoad(() => {
+	onLoad((options) => {
+		// #ifdef MP-WEIXIN
+		mpTabMode.value = options?.mpTab === '1' || options?.mpTab === 'true'
+		// #endif
 		getSysteminfo()
 	})
 </script>

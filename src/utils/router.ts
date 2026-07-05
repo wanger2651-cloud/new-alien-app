@@ -129,6 +129,11 @@ export class Router {
     this.#route = ref(initRoute)
     this.#initRoute = initRoute
 
+    // #ifdef MP-WEIXIN
+    // 小程序走原生导航；拦截器会导致 switchTab / 分包页面跳转异常或超时
+    return
+    // #endif
+
     // 拦截函数名
     const names = [
       'navigateTo',

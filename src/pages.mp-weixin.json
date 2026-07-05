@@ -1,0 +1,97 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue",
+			"^inputItem$": "@/components/inputItem.vue",
+			"^SettingPopupPlanContent$": "@/components/SettingPopupPlanContent.vue",
+			"^manageCard$": "@/components/manageCard.vue",
+			"^ManageCard$": "@/components/manageCard.vue",
+			"^IcpFooter$": "@/components/IcpFooter.vue",
+			"^PrivacyAgreeBar$": "@/components/PrivacyAgreeBar.vue",
+			"^PrivacyConsentDialog$": "@/components/PrivacyConsentDialog.vue",
+			"^MpTabBar$": "@/components/MpTabBar.vue"
+		}
+	},
+	"pages": [
+		{ "path": "pages/login/chooseUser", "style": { "navigationStyle": "custom" } },
+		{ "path": "pages/login/merchantLogin", "style": { "navigationStyle": "custom" } },
+		{ "path": "pages/login/register", "style": { "navigationStyle": "custom" } },
+		{ "path": "pages/login/forgetPassword", "style": { "navigationStyle": "custom" } },
+		{ "path": "pages/common/policy-webview", "style": { "navigationBarTitleText": "政策详情" } },
+		{ "path": "pages/customer-service/index", "style": { "navigationStyle": "custom" } },
+		{ "path": "pages/addshop/addShop", "style": { "navigationStyle": "custom" } }
+	],
+	"subPackages": [
+		{
+			"root": "pages/storeManage",
+			"pages": [
+				{ "path": "storeManage", "style": { "navigationStyle": "custom", "disableScroll": true } }
+			]
+		},
+		{
+			"root": "pages/aggregated-service",
+			"pages": [
+				{ "path": "aggregated-service", "style": { "navigationStyle": "custom", "disableScroll": true } },
+				{ "path": "message-manage", "style": { "navigationStyle": "custom" } },
+				{ "path": "session-detail", "style": { "navigationStyle": "custom" } },
+				{ "path": "shop-manage", "style": { "navigationStyle": "custom" } },
+				{ "path": "service-manage", "style": { "navigationStyle": "custom" } },
+				{ "path": "workbench", "style": { "navigationStyle": "custom" } }
+			]
+		},
+		{
+			"root": "pages/feedback",
+			"pages": [
+				{ "path": "feedback", "style": { "navigationStyle": "custom" } },
+				{ "path": "admin-feedback", "style": { "navigationStyle": "custom" } }
+			]
+		},
+		{
+			"root": "pages/shop-management",
+			"pages": [
+				{ "path": "shop-management", "style": { "navigationStyle": "custom" } },
+				{ "path": "task-query", "style": { "navigationStyle": "custom", "disableScroll": true } }
+			]
+		},
+		{ "root": "pages/pjss-web", "pages": [{ "path": "pjss-web", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/integral", "pages": [{ "path": "integral", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/service", "pages": [{ "path": "service", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/out-food", "pages": [{ "path": "out-food", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/answer-msg", "pages": [{ "path": "answer-msg", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/smart-gold", "pages": [{ "path": "smart-gold", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/smart-pic", "pages": [{ "path": "smart-pic", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/high-light", "pages": [{ "path": "high-light", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/wx-push", "pages": [{ "path": "wx-push", "style": { "navigationStyle": "custom" } }] },
+		{
+			"root": "pages/wechatsetting",
+			"pages": [
+				{ "path": "wechatsetting", "style": { "navigationStyle": "custom" } },
+				{ "path": "wechatsetting-config", "style": { "navigationStyle": "custom" } }
+			]
+		},
+		{ "root": "pages/manage", "pages": [{ "path": "manage", "style": { "navigationStyle": "custom" } }] },
+		{ "root": "pages/group", "pages": [{ "path": "group", "style": { "navigationStyle": "custom" } }] },
+		{
+			"root": "pages/user",
+			"pages": [
+				{ "path": "index", "style": { "navigationStyle": "custom", "disableScroll": true } },
+				{ "path": "nodeChild", "style": { "navigationStyle": "custom" } },
+				{ "path": "app-tutorial", "style": { "navigationStyle": "custom" } }
+			]
+		}
+	],
+	"preloadRule": {
+		"pages/login/chooseUser": {
+			"network": "all",
+			"packages": ["pages/storeManage"]
+		}
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "青柠助手",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}

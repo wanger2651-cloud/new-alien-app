@@ -1,5 +1,5 @@
 ﻿<template>
-	<view class="store" :class="{ 'store--tab': embeddedTab }" :style="{paddingTop: systemBarHeight + 'px'}">
+	<view class="store" :class="{ 'store--tab': isMpTabLayout }" :style="{paddingTop: systemBarHeight + 'px'}">
 		<wd-navbar :fixed="true" :safeAreaInsetTop="true" title="青柠助手" :bordered="false"></wd-navbar>
 		<view class="header-fixed-container" style="position: fixed;width: 100%;left: 0;z-index: 12;top: 0;overflow: visible;padding-bottom: 30rpx;height: calc(10px + 7.15625rem + 70rpx);min-height: calc(10px + 7.15625rem + 70rpx);" :style="`background: ${currentPlatformBgColor};`">
 			<!-- 底部遮罩层：防止店铺卡片溢出 -->
@@ -761,11 +761,17 @@
 				</view>
 			</view>
 		</wd-popup>
+		<!-- #ifdef MP-WEIXIN -->
+		<MpTabBar v-if="mpTabMode" active="manage" />
+		<!-- #endif -->
 	</view>
 </template>
 
 <script setup>
-	defineProps({
+	// #ifdef MP-WEIXIN
+	import MpTabBar from '@/components/MpTabBar.vue'
+	// #endif
+	const componentProps = defineProps({
 		embeddedTab: {
 			type: Boolean,
 			default: false
@@ -805,9 +811,6 @@
 		computed,
 		watch
 	} from 'vue'
-	import {
-		useRouter
-	} from '@/utils/router';
 	import { useAuthStore } from '@/store/auth.ts'
 	import {
 		onLoad,
@@ -815,8 +818,9 @@
 		onUnload,
 		onHide
 	} from '@dcloudio/uni-app';
-	const router = useRouter()
 	const authStore = useAuthStore()
+	const mpTabMode = ref(false)
+	const isMpTabLayout = computed(() => componentProps.embeddedTab || mpTabMode.value)
 	
 	// 帮助提示相关（气泡提示）
 	const currentTooltipShop = ref(null)
@@ -3932,8 +3936,10 @@
 		// 不需要在 onShow 中调用 getUserInfo，因为数量会在 getShopList 中更新
 	})
 	
-	onLoad((options) => {
-		// 监听店铺功能开关变化事件（在页面加载时设置，确保能接收后台事件）
+	let pageReady = false
+	const bootstrapPage = (options = {}) => {
+		if (pageReady) return
+		pageReady = true
 		uni.$on('shopFunctionChanged', handleShopFunctionChanged)
 		getSysteminfo()
 		if (options && options.shopType) {
@@ -3942,16 +3948,26 @@
 			tab.value = st
 			saveStoredShopType(st)
 		}
-		// 获取当前店铺类型的功能列表
 		getSupportedFuncList(queryParams.filter.shopType)
 		getShopList()
 		getprovincewithcitys()
 		getGroupList()
-		getUserInfo() // 获取用户信息并更新平台类型数量
+		getUserInfo()
+	}
+
+	onLoad((options) => {
+		// #ifdef MP-WEIXIN
+		mpTabMode.value = options?.mpTab === '1' || options?.mpTab === 'true'
+		// #endif
+		bootstrapPage(options)
 	})
-	
+
 	onMounted(() => {
-		getUserInfo() // 在组件挂载时也获取一次
+		if (componentProps.embeddedTab) {
+			bootstrapPage({})
+		} else if (!mpTabMode.value) {
+			getUserInfo()
+		}
 	})
 	
 	// 页面卸载时移除事件监听

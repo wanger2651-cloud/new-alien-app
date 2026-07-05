@@ -4,12 +4,13 @@ import Components from 'unplugin-vue-components/vite'
 import UnoCSS from 'unocss/vite'
 import { resolve } from 'path';
 import fs from 'fs';
+import { spawnSync } from 'child_process';
 // https://vitejs.dev/config/
 const isMpWeixin = process.env.UNI_PLATFORM === 'mp-weixin'
 
 /** 编译后修正 project.config.json，避免 touristappid 导致开发者工具报错 */
 function fixMpWeixinProjectConfig() {
-  const fix = () => {
+  const fixProjectConfig = () => {
     if (process.env.UNI_PLATFORM !== 'mp-weixin') return
     for (const sub of ['dist/dev/mp-weixin', 'dist/build/mp-weixin']) {
       const file = resolve(__dirname, sub, 'project.config.json')
@@ -21,6 +22,17 @@ function fixMpWeixinProjectConfig() {
       json.projectname = json.projectname || '青柠助手'
       fs.writeFileSync(file, JSON.stringify(json, null, 2) + '\n')
     }
+  }
+  const fixTabComponents = () => {
+    if (process.env.UNI_PLATFORM !== 'mp-weixin') return
+    spawnSync(process.execPath, ['scripts/fix-mp-tab-components.js'], {
+      cwd: __dirname,
+      stdio: 'inherit',
+    })
+  }
+  const fix = () => {
+    fixProjectConfig()
+    fixTabComponents()
   }
   return {
     name: 'fix-mp-weixin-project-config',

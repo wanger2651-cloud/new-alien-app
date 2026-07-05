@@ -10,9 +10,10 @@
 			<view class="webview-wrapper" v-if="!isLoading"></view>
 			<!-- #endif -->
 			<!-- #ifdef H5 -->
-			<view class="h5-tip">
-				<text>请在APP中打开此页面</text>
-			</view>
+			<view class="h5-tip"><text>请在APP中打开此页面</text></view>
+			<!-- #endif -->
+			<!-- #ifdef MP-WEIXIN -->
+			<web-view v-if="webviewUrl && !isLoading" class="mp-webview" :src="webviewUrl" />
 			<!-- #endif -->
 		</view>
 		<!-- 缩放按钮 - 使用 cover-view 确保显示在原生组件之上 -->
@@ -32,10 +33,40 @@
 <script setup>
 	import { ref, onMounted, onUnmounted } from 'vue'
 	import { onLoad, onShow } from '@dcloudio/uni-app'
-	import { ManagementApi } from '@/api/management.ts'
-	import { getPlatformLoginUrl } from '@/utils/platform-login-urls'
+	import { ShopApi } from '@/api/shop.ts'
+	import { UserApi } from '@/api/login.ts'
+	import { useAuthStore } from '@/store/auth.ts'
+	import { getPlatformLoginUrl, getPlatformLoginFinalUrl } from '@/utils/platform-login-urls'
 	import { mapShopTypeToCookieType, extractShopIdFromCookie, formatCookieForPlatform } from '@/utils/shop-auth'
 	import { getPlatformName } from '@/utils/platforms'
+	import { buildShopAuthLink } from '@/utils/authLink'
+
+	const authStore = useAuthStore()
+	// #ifdef MP-WEIXIN
+	const webviewUrl = ref('')
+	const initMpAuth = async () => {
+		isLoading.value = true
+		try {
+			let userId = authStore.userId || uni.getStorageSync('userId')
+			if (!userId) {
+				const res = await UserApi.getUser()
+				userId = res?.data?.user_id || res?.data?.UserId || res?.data?.id
+				if (userId) authStore.setUserId(String(userId))
+			}
+			if (!userId) throw new Error('请先登录')
+			if (shopType.value === 8) {
+				const res = await ShopApi.getOfficeAuth(8)
+				webviewUrl.value = res?.data?.Url || ''
+			} else {
+				webviewUrl.value = buildShopAuthLink(shopType.value, String(userId))
+			}
+		} catch (e) {
+			uni.showToast({ title: e?.message || '加载失败', icon: 'none' })
+		} finally {
+			isLoading.value = false
+		}
+	}
+	// #endif
 
 	const systemBarHeight = ref(0)
 	const shopType = ref(1) // 平台类型：1=美团外卖, 2=美团闪购, 3=美团医药, 4=淘宝闪购外卖, 5=淘宝闪购零售, 6=京东零售, 7=抖店即时零售, 8=京东外卖, 9=抖音外卖
@@ -96,8 +127,12 @@
 			}
 		})
 
-		// 初始化添加店铺流程
+		// #ifdef MP-WEIXIN
+		initMpAuth()
+		// #endif
+		// #ifndef MP-WEIXIN
 		initAddShop()
+		// #endif
 	})
 
 	const handleBack = () => {
@@ -236,7 +271,7 @@
 			setTimeout(() => {
 			// 对于淘宝闪购外卖平台（shopType=4），需要添加/login路径
 			// 对于淘宝闪购零售平台（shopType=5），不需要添加/login路径，直接使用基础URL
-				const finalUrl = (shopType.value === 4) ? (url + '/login') : url
+				const finalUrl = getPlatformLoginFinalUrl(shopType.value, url)
 				w = plus.webview.open(finalUrl, webviewid, webview_setting)
 				isLoading.value = false
 				w.show()
@@ -830,7 +865,7 @@
 		}
 		
 		uni.showLoading({})
-		ManagementApi.addShop(params).then(res => {
+		ShopApi.agentAddShop({ shop_type: shopType.value, cookies: formattedCookie }).then(res => {
 			isSubmitting.value = false
 			
 			if (res.code === 200) {

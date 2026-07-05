@@ -1,11 +1,11 @@
 <template>
 	<view
 		class="aggregated-service"
-		:class="{ 'aggregated-service--tab': embeddedTab }"
+		:class="{ 'aggregated-service--tab': isMpTabLayout }"
 		:style="rootStyle"
 	>
 		<wd-navbar
-			v-if="!embeddedTab"
+			v-if="!isMpTabLayout"
 			:fixed="true"
 			:safeAreaInsetTop="true"
 			title="聚合客服"
@@ -15,19 +15,31 @@
 			:bordered="false"
 		></wd-navbar>
 		<view class="poster-wrap" :style="posterWrapStyle">
+			<!-- #ifdef MP-WEIXIN -->
+			<image src="/static/img/juhekfu-Poster-sm.jpg" class="poster-img" mode="widthFix"></image>
+			<!-- #endif -->
+			<!-- #ifndef MP-WEIXIN -->
 			<image src="/static/img/juhekfu-Poster.jpg" class="poster-img" mode="widthFix"></image>
-			<view v-if="!embeddedTab" class="poster-fill"></view>
+			<!-- #endif -->
+			<view v-if="!isMpTabLayout" class="poster-fill"></view>
 		</view>
 
-		<view class="bottom-actions" :class="{ 'bottom-actions--tab': embeddedTab }">
-			<view class="workbench-btn" @click="handleEnterWorkbench">
+		<view class="bottom-actions" :class="{ 'bottom-actions--tab': isMpTabLayout }">
+			<view class="workbench-btn" @tap="handleEnterWorkbench">
 				<text class="workbench-btn-text">进入工作台</text>
 			</view>
 		</view>
+		<!-- #ifdef MP-WEIXIN -->
+		<MpTabBar v-if="mpTabMode" active="aggregated" />
+		<!-- #endif -->
 	</view>
 </template>
 
 <script setup>
+	// #ifdef MP-WEIXIN
+	import MpTabBar from '@/components/MpTabBar.vue'
+	import { onLoad } from '@dcloudio/uni-app'
+	// #endif
 	import {
 		ref,
 		computed,
@@ -41,17 +53,20 @@
 		}
 	})
 
+	const mpTabMode = ref(false)
+	const isMpTabLayout = computed(() => props.embeddedTab || mpTabMode.value)
+
 	const systemBarHeight = ref(0)
 
 	const rootStyle = computed(() => {
-		if (props.embeddedTab) {
+		if (isMpTabLayout.value) {
 			return {}
 		}
 		return { paddingTop: systemBarHeight.value + 'px' }
 	})
 
 	const posterWrapStyle = computed(() => {
-		if (props.embeddedTab) {
+		if (isMpTabLayout.value) {
 			return { paddingTop: '0px' }
 		}
 		return { paddingTop: (systemBarHeight.value + 44) + 'px' }
@@ -80,6 +95,12 @@
 			})
 		})
 	}
+
+	// #ifdef MP-WEIXIN
+	onLoad((options) => {
+		mpTabMode.value = options?.mpTab === '1' || options?.mpTab === 'true'
+	})
+	// #endif
 
 	onMounted(() => {
 		getSysteminfo()
@@ -206,4 +227,4 @@
 		font-weight: 600;
 	}
 </style>
-
+

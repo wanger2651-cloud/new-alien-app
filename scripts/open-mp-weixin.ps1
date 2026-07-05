@@ -12,4 +12,4 @@ if (-not (Test-Path $Cli)) {
 }
 
 Write-Host "打开小程序目录: $DistPath"
-& $Cli open --project $DistPath --port 28028
+& $Cli open --project $DistPath --port 31993

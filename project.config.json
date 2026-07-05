@@ -1,12 +1,15 @@
 {
-  "description": "青柠助手微信小程序（由 uni-app 编译后合并配置）",
+  "description": "青柠助手微信小程序（uni-app 编译产物在 dist/build/mp-weixin）",
   "compileType": "miniprogram",
-  "appid": "",
+  "miniprogramRoot": "dist/build/mp-weixin/",
+  "appid": "wx0ba09d6b707076c9",
   "projectname": "青柠助手",
   "setting": {
     "urlCheck": false,
     "es6": true,
     "postcss": true,
-    "minified": true
+    "minified": true,
+    "newFeature": true,
+    "bigPackageSizeSupport": true
   }
 }

@@ -1,5 +1,7 @@
 // import API_CONFIG from '@/config/index'
+// #ifndef MP-WEIXIN
 import router from '@/router'
+// #endif
 import useAccountStore from '@/store/account'
 import { debounce } from '@/utils/common'
 import { useAuthStore } from '@/store/auth.ts'
@@ -98,9 +100,14 @@ const isEncApiPath = (url : string) => url.toLowerCase().includes('/encapi')
 /**
  * 打开登录
  */
-const openLogin = debounce(() =>
+const openLogin = debounce(() => {
+	// #ifdef MP-WEIXIN
+	uni.reLaunch({ url: '/pages/login/chooseUser?showModal=true' })
+	// #endif
+	// #ifndef MP-WEIXIN
 	router.push('/pages/login/chooseUser?showModal=true')
-)
+	// #endif
+})
 
 /**
  * 响应拦截器

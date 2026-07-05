@@ -4,7 +4,7 @@ const config = {
     baseUrl: "https://admin-web-nfzvpdlold.cn-shenzhen.fcapp.run",
   },
   production: {
-    baseUrl: "",
+    baseUrl: "https://admin-web-nfzvpdlold.cn-shenzhen.fcapp.run",
   },
 };
 

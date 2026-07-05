@@ -8,11 +8,11 @@
 		<view class="login-card">
 			<view class="login-tabs">
 				<view class="login-tab-item" :class="{ active: loginParams.loginMode === 'password' }"
-					@click="switchLoginMode('password')">
+					@tap="switchLoginMode('password')">
 					账号密码登录
 				</view>
 				<view class="login-tab-item" :class="{ active: loginParams.loginMode === 'ga' }"
-					@click="switchLoginMode('ga')">
+					@tap="switchLoginMode('ga')">
 					谷歌验证码登录
 				</view>
 			</view>
@@ -89,7 +89,7 @@
 			</view>
 		</view>
 		<PrivacyAgreeBar v-model="privacyAgreed" />
-		<view class="loginBut" @click="toLogin">登录</view>
+		<view class="loginBut" hover-class="loginBut-hover" @tap="toLogin">登录</view>
 		<view class="footer">
 			<view class="footerText" @tap="forget">忘记密码？</view>
 			<view class="footerText" @tap="openOnlineService">在线客服</view>
@@ -144,12 +144,22 @@
 					<view class="ga-tutorial-modal-close" @click="closeTutorialModal">×</view>
 				</view>
 				<view class="ga-tutorial-modal-content">
+					<!-- #ifdef MP-WEIXIN -->
+					<image 
+						src="../../static/img/bind-sm.jpg" 
+						mode="widthFix" 
+						class="ga-tutorial-image"
+						@error="handleTutorialImageError"
+						@load="handleTutorialImageLoad" />
+					<!-- #endif -->
+					<!-- #ifndef MP-WEIXIN -->
 					<image 
 						src="../../static/img/bind.png" 
 						mode="widthFix" 
 						class="ga-tutorial-image"
 						@error="handleTutorialImageError"
 						@load="handleTutorialImageLoad" />
+					<!-- #endif -->
 				</view>
 				<view class="ga-tutorial-modal-footer">
 					<view class="ga-tutorial-modal-btn" @click="saveTutorialImageToAlbum">保存图片</view>
@@ -167,15 +177,10 @@
 	} from '@dcloudio/uni-app';
 	import {
 		reactive,
-		ref
-	} from 'vue';
-	// import { getloginApi } from  '@/api/login';
-	import {
-		useAuthStore
-	} from '@/store/auth.ts'
-	import {
+		ref,
 		nextTick
-	} from 'process';
+	} from 'vue';
+	import { useAuthStore } from '@/store/auth.ts'
 	import { HomeApi } from '@/api/home';
 	import { getLineApiUrl } from '@/config/lineConfig';
 	import { saveRegisterInviteCode } from '@/utils/registerInvite'
@@ -186,6 +191,7 @@
 	import { ensureLoginPrivacyAgreed } from '@/utils/privacyConsent';
 	import { isAuditLoginPhone } from '@/config/auditLoginConfig';
 	import { ensureApiLineConfig } from '@/utils/ensureApiLine';
+	import { goAppHome } from '@/utils/mpHome';
 
 	const pageText = ref('')
 	const pageFlag = ref('')
@@ -385,9 +391,7 @@
 			success: function() {}
 		})
 		showToast('success', successMessage)
-		if (pageFlag.value === '2') {
-			uni.navigateTo({ url: '/pages/master-index/master-index' })
-		}
+		if (pageFlag.value === '2') goAppHome()
 		return true
 	}
 
@@ -610,9 +614,14 @@
 
 	// 保存教程图片到相册
 	const saveTutorialImageToAlbum = () => {
-		// 使用 uni.getImageInfo 获取图片信息，然后保存
+		// #ifdef MP-WEIXIN
+		const tutorialImg = '../../static/img/bind-sm.jpg'
+		// #endif
+		// #ifndef MP-WEIXIN
+		const tutorialImg = '../../static/img/bind.png'
+		// #endif
 		uni.getImageInfo({
-			src: '../../static/img/bind.png',
+			src: tutorialImg,
 			success: (res) => {
 				saveImageToAlbum(res.path)
 			},
@@ -697,6 +706,7 @@
 					url: '/pages/login/chooseUser'
 				});
 			}, 2000)
+			return
 		}
 		if (!loginParams.phone) {
 			return showToast('error', '手机号不能为空')
@@ -787,9 +797,7 @@
 					
 					showToast('success', '登录成功')
 					
-					if (pageFlag.value === '2') {
-						uni.navigateTo({ url: '/pages/master-index/master-index' });
-					}
+					if (pageFlag.value === '2') goAppHome();
 					// 商家版已移除，注释掉商家版跳转逻辑
 					// else if (pageFlag.value === '1') {
 					// 	uni.switchTab({ url: '/pages/shop/shop' });
@@ -829,9 +837,7 @@
 						data: { phone },
 						success: function() {}
 					});
-					if (pageFlag.value === '2') {
-						uni.navigateTo({ url: '/pages/master-index/master-index' });
-					}
+					if (pageFlag.value === '2') goAppHome();
 					// 商家版已移除，注释掉商家版跳转逻辑
 					// else if (pageFlag.value === '1') {
 					// 	uni.switchTab({ url: '/pages/shop/shop' });
@@ -1200,6 +1206,12 @@
 			align-items: center;
 			justify-content: center;
 			margin: 60rpx 50rpx 0;
+			position: relative;
+			z-index: 2;
+		}
+
+		.loginBut-hover {
+			opacity: 0.85;
 		}
 
 		.isV2 {

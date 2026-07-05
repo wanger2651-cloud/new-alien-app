@@ -35,6 +35,7 @@
 		HomeApi
 	} from '@/api/home';
 	import inputItem from '@/components/inputItem.vue';
+	import { goAppHome } from '@/utils/mpHome';
 	const authStore = useAuthStore()
 	// 声明一个响应式对象
 	const agencyRegVo = reactive({
@@ -144,11 +145,7 @@
 									const token = data.Token
 									authStore.setToken(token)
 									authStore.setUserId(data.UserInfo.UserId)
-									if (pageFlag.value === '2') {
-										uni.navigateTo({
-											url: '/pages/master-index/master-index'
-										});
-									}
+									if (pageFlag.value === '2') goAppHome();
 									// 商家版已移除，注释掉商家版跳转逻辑
 									// else if (pageFlag.value === '1') {
 									// 	uni.switchTab({

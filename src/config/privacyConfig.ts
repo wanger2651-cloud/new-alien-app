@@ -3,7 +3,7 @@ export const PRIVACY_AGREED_KEY = 'qingning_privacy_agreed_v1'
 
 /** OBS 静态网站（可正常访问，自定义域名证书修复前统一使用） */
 export const SITE_BASE_URL =
-	'http://qingning-website.obs-website.cn-southwest-2.myhuaweicloud.com'
+	'https://qingning-website.obs-website.cn-southwest-2.myhuaweicloud.com'
 
 export const TERMS_URL = `${SITE_BASE_URL}/terms.html`
 export const PRIVACY_URL = `${SITE_BASE_URL}/privacy.html`
