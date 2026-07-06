@@ -997,6 +997,7 @@
 	import {
 		useRouter
 	} from '@/utils/router';
+	import { parseDateSafe } from '@/utils/date'
 	const emit = defineEmits(['addMoney', 'update:modelValue'])
 	const router = useRouter()
 	let check = ref(false)
@@ -1380,8 +1381,8 @@
 			return val.slice(0, 10)
 		}
 		try {
-			const d = new Date(val)
-			if (isNaN(d.getTime())) return ''
+			const d = parseDateSafe(val)
+			if (!d) return ''
 			const y = d.getFullYear()
 			const m = String(d.getMonth() + 1).padStart(2, '0')
 			const day = String(d.getDate()).padStart(2, '0')
@@ -2771,7 +2772,8 @@
 	const isFuncExpired = () => {
 		if (!props.time) return true
 		try {
-			const endTime = new Date(props.time)
+			const endTime = parseDateSafe(props.time)
+			if (!endTime) return true
 			const now = new Date()
 			// 设置时间为当天的 00:00:00，只比较日期
 			now.setHours(0, 0, 0, 0)

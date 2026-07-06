@@ -668,6 +668,7 @@
 	import SettingPopupPlanContent from '@/components/SettingPopupPlanContent.vue'
 	import { useAuthStore } from '@/store/auth.ts'
 	import { UserApi } from '@/api/login'
+	import { parseDateSafe } from '@/utils/date'
 
 	const systemBarHeight = ref(0)
 	const authStore = useAuthStore()
@@ -1135,9 +1136,9 @@
 						imKefuEnabled = false
 					} else {
 						// 检查是否已过期
-						const endTime = new Date(kefuEndTime)
+						const endTime = parseDateSafe(kefuEndTime)
 						const now = new Date()
-						if (endTime < now) {
+						if (!endTime || endTime < now) {
 							imKefuEnabled = false
 						}
 					}
@@ -2428,8 +2429,8 @@
 	
 	const formatDate = (time) => {
 		if (!time) return ''
-		const date = new Date(time)
-		if (Number.isNaN(date.getTime())) return ''
+		const date = parseDateSafe(time)
+		if (!date) return ''
 		const y = date.getFullYear()
 		const m = String(date.getMonth() + 1).padStart(2, '0')
 		const d = String(date.getDate() + 0).padStart(2, '0')
@@ -2440,8 +2441,8 @@
 	const formatAuthTime = (time) => {
 		if (!time) return '暂无'
 		try {
-			const date = new Date(time)
-			if (Number.isNaN(date.getTime())) return '暂无'
+			const date = parseDateSafe(time)
+			if (!date) return '暂无'
 			const y = date.getFullYear()
 			const m = String(date.getMonth() + 1).padStart(2, '0')
 			const d = String(date.getDate()).padStart(2, '0')

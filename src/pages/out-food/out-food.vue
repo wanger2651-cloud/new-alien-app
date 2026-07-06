@@ -75,6 +75,7 @@
 	import {
 		logApi
 	} from '@/api/log'
+	import { parseDateSafe } from '@/utils/date'
 
 	let queryParams = reactive({
 		funccode: '',
@@ -138,8 +139,9 @@
 		getLogData()
 	}
 	const getTime = (row) => {
-		const endTime = new Date(row.out_endTime)
-		const startTime = new Date(row.order_time)
+		const endTime = parseDateSafe(row.out_endTime)
+		const startTime = parseDateSafe(row.order_time)
+		if (!endTime || !startTime) return '-'
 		// 计算两个时间点之间的毫秒差
 		const diffInMilliseconds = endTime - startTime;
 

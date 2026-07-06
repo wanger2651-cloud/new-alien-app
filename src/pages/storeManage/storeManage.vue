@@ -803,6 +803,7 @@
 		UserApi
 	} from '@/api/login'
 	import request from '@/utils/request'
+	import { parseDateSafe, parseDateTimestamp, formatDateYMD } from '@/utils/date'
 	import {
 		onMounted,
 		ref,
@@ -2410,7 +2411,6 @@
 			payList.value = tempList
 
 			if (payList.value.length === 0) {
-				uni.hideLoading()
 				uni.showToast({
 					title: '暂无可用规格',
 					icon: 'none',
@@ -2418,15 +2418,15 @@
 				})
 				return
 			}
-			uni.hideLoading()
 			authGoodsVisible.value = true
 		} catch (err) {
-			uni.hideLoading()
 			uni.showToast({
 				title: err.message || '获取功能价格失败，请重试',
 				icon: 'none',
 				duration: 3000
 			})
+		} finally {
+			uni.hideLoading()
 		}
 	}
 	const onPopupHandler = (row, codeOrStr, str) => {
@@ -3364,7 +3364,7 @@
 		const target = Array.isArray(funcInfo) ? funcInfo.find((f) => f?.code === code) : null
 		const endTime = target?.end_time
 		if (!endTime) return '-'
-		const end = new Date(endTime).getTime()
+		const end = parseDateTimestamp(endTime)
 		if (Number.isNaN(end)) return '-'
 		const now = Date.now()
 		const diff = end - now
@@ -3377,7 +3377,7 @@
 		const target = Array.isArray(funcInfo) ? funcInfo.find((f) => f?.code === code) : null
 		const endTime = target?.end_time
 		if (!endTime) return Number.MAX_SAFE_INTEGER
-		const end = new Date(endTime).getTime()
+		const end = parseDateTimestamp(endTime)
 		if (Number.isNaN(end)) return Number.MAX_SAFE_INTEGER
 		const now = Date.now()
 		const diff = end - now
@@ -3570,12 +3570,12 @@
 	}
 
 	const getAuthTimeSortValue = (ckUptime) => {
-		const ts = new Date(ckUptime || '').getTime()
+		const ts = parseDateTimestamp(ckUptime)
 		return Number.isNaN(ts) ? Number.MAX_SAFE_INTEGER : ts
 	}
 
 	const formatAuthAgoDays = (ckUptime) => {
-		const ts = new Date(ckUptime || '').getTime()
+		const ts = parseDateTimestamp(ckUptime)
 		if (Number.isNaN(ts)) return '-'
 		const now = Date.now()
 		const diff = now - ts
@@ -3595,19 +3595,7 @@
 		queryParams.page = 1 // 切换店铺类型时重置到第一页
 		getShopList()
 	}
-	const time = (date) => {
-		if (date) {
-			date = new Date(date);
-			var y = date.getFullYear();
-			var m = date.getMonth() + 1;
-			m = m < 10 ? "0" + m : m;
-			var d = date.getDate();
-			d = d < 10 ? "0" + d : d;
-			return y + "-" + m + "-" + d;
-		} else {
-			return '已到期'
-		}
-	}
+	const time = (date) => formatDateYMD(date)
 	// 计算功能到期时间显示文本
 	const getExpireTimeText = (item, code) => {
 		let endTime = null
@@ -3631,7 +3619,8 @@
 		}
 		
 		try {
-			const endDate = new Date(endTime)
+			const endDate = parseDateSafe(endTime)
+			if (!endDate) return '已到期'
 			const now = new Date()
 			// 设置时间为当天的 00:00:00，只比较日期
 			now.setHours(0, 0, 0, 0)
@@ -3686,8 +3675,8 @@
 			return '暂无'
 		}
 		try {
-			const dateObj = new Date(date);
-			if (isNaN(dateObj.getTime())) {
+			const dateObj = parseDateSafe(date)
+			if (!dateObj) {
 				return '暂无'
 			}
 			const y = dateObj.getFullYear();

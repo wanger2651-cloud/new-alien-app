@@ -301,6 +301,7 @@
 	import { GroupApi } from '@/api/group'
 	import { ShopApi } from '@/api/shop'
 	import { ShopType } from '@/TsModel/Alien/Entity/Enums/ShopType'
+	import { parseDateSafe } from '@/utils/date'
 
 	const systemBarHeight = ref(0)
 	const currentTab = ref('service') // 'service' | 'all'
@@ -1283,7 +1284,8 @@
 	const formatTime = (timeStr) => {
 		if (!timeStr) return '-'
 		try {
-			const date = new Date(timeStr)
+			const date = parseDateSafe(timeStr)
+			if (!date) return '-'
 			const year = date.getFullYear()
 			const month = String(date.getMonth() + 1).padStart(2, '0')
 			const day = String(date.getDate()).padStart(2, '0')

@@ -79,6 +79,7 @@
 	import type { ImMessage } from '@/TsModel/Alien/Entity/Messages/ImMessage'
 	import type { t_wmt_im_session } from '@/TsModel/Alien/Entity/Tables/IM/t_wmt_im_session'
 	import { imNotificationService } from '@/utils/imNotification.ts'
+	import { parseDateSafe, parseDateTimestamp } from '@/utils/date'
 
 	const systemBarHeight = ref(0)
 	const currentTab = ref<'serving' | 'all'>('serving')
@@ -263,8 +264,8 @@
 				sessionMap.set(sessionId, session)
 			} else {
 				// 已存在，比较时间，保留最新的
-				const existingTime = new Date(existing.last_message_time || existing.crtim || 0).getTime()
-				const currentTime = new Date(session.last_message_time || session.crtim || 0).getTime()
+				const existingTime = parseDateTimestamp(existing.last_message_time || existing.crtim || 0, 0)
+				const currentTime = parseDateTimestamp(session.last_message_time || session.crtim || 0, 0)
 				if (currentTime > existingTime) {
 					sessionMap.set(sessionId, session)
 				}
@@ -274,8 +275,8 @@
 		// 转换为数组并按时间排序（最新的在前）
 		const result = Array.from(sessionMap.values())
 		result.sort((a, b) => {
-			const timeA = new Date(a.last_message_time || a.crtim || 0).getTime()
-			const timeB = new Date(b.last_message_time || b.crtim || 0).getTime()
+			const timeA = parseDateTimestamp(a.last_message_time || a.crtim || 0, 0)
+			const timeB = parseDateTimestamp(b.last_message_time || b.crtim || 0, 0)
 			return timeB - timeA
 		})
 		
@@ -292,7 +293,8 @@
 
 	const formatTime = (timeStr: string | Date | null | undefined) => {
 		if (!timeStr) return ''
-		const date = new Date(timeStr)
+		const date = parseDateSafe(timeStr)
+		if (!date) return ''
 		const now = new Date()
 		const diff = now.getTime() - date.getTime()
 		const hours = Math.floor(diff / 3600000)

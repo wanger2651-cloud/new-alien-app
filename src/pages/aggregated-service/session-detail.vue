@@ -522,6 +522,7 @@
 	import type { t_wmt_im_message } from '@/TsModel/Alien/Entity/Tables/IM/t_wmt_im_message'
 	import type { t_wmt_im_session } from '@/TsModel/Alien/Entity/Tables/IM/t_wmt_im_session'
 	import { API_URL } from '@/env'
+	import { parseDateSafe, parseDateTimestamp } from '@/utils/date'
 
 	const authStore = useAuthStore()
 
@@ -554,7 +555,7 @@
 	
 	// 工具函数：获取消息时间戳
 	const getMessageTime = (msg: any): number => {
-		return new Date(msg.sent_at || msg.crtim || msg.created_at || 0).getTime()
+		return parseDateTimestamp(msg.sent_at || msg.crtim || msg.created_at || 0, 0)
 	}
 
 	// 工具函数：按时间排序消息
@@ -734,7 +735,8 @@
 	// 时间格式化（与列表页保持一致）
 	const formatTime = (time: any) => {
 		if (!time) return ''
-		const date = new Date(time)
+		const date = parseDateSafe(time)
+		if (!date) return ''
 		const now = new Date()
 		const diff = now.getTime() - date.getTime()
 		const hours = Math.floor(diff / 3600000)
@@ -782,8 +784,8 @@
 			return true
 		}
 		
-		const currentTime = new Date(currentMsg.sent_at).getTime()
-		const previousTime = new Date(previousMsg.sent_at).getTime()
+		const currentTime = parseDateTimestamp(currentMsg.sent_at, 0)
+		const previousTime = parseDateTimestamp(previousMsg.sent_at, 0)
 		const timeDiff = currentTime - previousTime
 		
 		// 如果时间间隔超过5分钟，显示时间

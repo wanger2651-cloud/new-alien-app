@@ -57,6 +57,7 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { FeedBackApi } from '@/api/feedback'
+import { parseDateTimestamp } from '@/utils/date'
 
 type FeedbackItem = {
 	id: string
@@ -115,8 +116,8 @@ const loadList = async () => {
 	try {
 		const res = await FeedBackApi.getAdminFeedBack(query.value.page, query.value.pageSize)
 		const rows = normalizeList(res).sort((a, b) => {
-			const ta = new Date(String(a?.crtim || '')).getTime() || 0
-			const tb = new Date(String(b?.crtim || '')).getTime() || 0
+			const ta = parseDateTimestamp(a?.crtim || '', 0)
+			const tb = parseDateTimestamp(b?.crtim || '', 0)
 			return tb - ta
 		})
 		const total = normalizeTotal(res)

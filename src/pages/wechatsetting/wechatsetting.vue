@@ -258,6 +258,7 @@
 	import { ManagementApi } from '@/api/management.ts'
 	import { logApi } from '@/api/log'
 	import request from '@/utils/request'
+	import { parseDateSafe } from '@/utils/date'
 	import SettingPopupPlanContent from '@/components/SettingPopupPlanContent.vue'
 	
 	const systemBarHeight = ref(0)
@@ -302,14 +303,7 @@
 		systemBarHeight.value = systemInfo.statusBarHeight || 0
 	}
 
-	const parseEndTime = (val) => {
-		if (!val) return null
-		let d = new Date(val)
-		if (isNaN(d.getTime()) && typeof val === 'string') {
-			d = new Date(val.replace(' ', 'T'))
-		}
-		return isNaN(d.getTime()) ? null : d
-	}
+	const parseEndTime = (val) => parseDateSafe(val)
 
 	const chatpushFunc = computed(() => {
 		const list = storageShopInfo.func_enable

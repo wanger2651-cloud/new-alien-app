@@ -5,6 +5,7 @@
 
 import request from '@/utils/request'
 import { useAuthStore } from '@/store/auth.ts'
+import { parseDateTimestamp } from '@/utils/date'
 
 interface UnreadCountVo {
 	ShopId?: string | null
@@ -483,8 +484,8 @@ class ImNotificationService {
 		}
 		// 按最后消息时间排序，获取最新的
 		unreadSessions.sort((a: any, b: any) => {
-			const timeA = new Date(a.last_message_time || a.crtim || 0).getTime()
-			const timeB = new Date(b.last_message_time || b.crtim || 0).getTime()
+			const timeA = parseDateTimestamp(a.last_message_time || a.crtim || 0, 0)
+			const timeB = parseDateTimestamp(b.last_message_time || b.crtim || 0, 0)
 			return timeB - timeA
 		})
 		return unreadSessions[0]

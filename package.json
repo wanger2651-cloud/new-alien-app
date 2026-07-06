@@ -48,6 +48,8 @@
     "open:mp-weixin": "node scripts/open-mp-weixin.js",
     "start:mp-weixin": "node scripts/start-mp-weixin.js",
     "verify:mp-weixin": "node scripts/verify-mp-weixin.js",
+    "smoke:mp-weixin": "node scripts/smoke-mp-weixin.mjs",
+    "upload:mp-weixin": "npm run build:mp-weixin && node scripts/upload-mp-weixin.js",
     "build:mp-xhs": "uni build -p mp-xhs",
     "build:quickapp-webview": "uni build -p quickapp-webview",
     "build:quickapp-webview-huawei": "uni build -p quickapp-webview-huawei",

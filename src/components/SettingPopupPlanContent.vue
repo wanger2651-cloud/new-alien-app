@@ -455,7 +455,6 @@
 					isKeyWord = false
 				}
 			} else {
-				uni.hideLoading()
 				return
 			}
 			
@@ -505,7 +504,6 @@
 			})
 		} finally {
 			isSpecLoading.value = false
-			uni.hideLoading()
 		}
 	}
 
