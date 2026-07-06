@@ -14,28 +14,32 @@
 </template>
 
 <script setup lang="ts">
-import { redirectToMpShellTab, type MpTabKey } from '@/utils/mpShell'
+import { onMounted } from 'vue'
+import { preloadMpTabPages } from '@/utils/mpTabPreload'
 
 defineProps<{
-	active: MpTabKey
+	active: 'manage' | 'aggregated' | 'user'
 }>()
 
 const tabs = [
 	{
 		key: 'manage' as const,
 		text: '门店管理',
+		url: '/pages/storeManage/storeManage?mpTab=1',
 		iconPath: '/static/shop/icon_041a.png',
 		selectedIconPath: '/static/shop/icon_048a.png',
 	},
 	{
 		key: 'aggregated' as const,
 		text: '聚合客服',
+		url: '/pages/aggregated-service/aggregated-service?mpTab=1',
 		iconPath: '/static/shop/icon_045a.png',
 		selectedIconPath: '/static/shop/icon_044a.png',
 	},
 	{
 		key: 'user' as const,
 		text: '个人中心',
+		url: '/pages/user/index?mpTab=1',
 		iconPath: '/static/shop/icon_043a.png',
 		selectedIconPath: '/static/shop/icon_046a.png',
 	},
@@ -45,9 +49,21 @@ const onTap = (item: (typeof tabs)[number]) => {
 	const pages = getCurrentPages()
 	const current = pages[pages.length - 1] as { route?: string }
 	const currentPath = current?.route ? `/${current.route}` : ''
-	if (currentPath === '/pages/mp-shell/mp-shell') return
-	redirectToMpShellTab(item.key)
+	const targetPath = item.url.split('?')[0]
+	if (currentPath === targetPath) return
+	preloadMpTabPages(targetPath)
+	uni.redirectTo({
+		url: item.url,
+		fail: () => uni.reLaunch({ url: item.url }),
+	})
 }
+
+onMounted(() => {
+	const pages = getCurrentPages()
+	const current = pages[pages.length - 1] as { route?: string }
+	const currentPath = current?.route ? `/${current.route}` : ''
+	preloadMpTabPages(currentPath)
+})
 </script>
 
 <style scoped lang="scss">

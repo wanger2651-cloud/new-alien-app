@@ -20,8 +20,7 @@
 		{ "path": "pages/login/forgetPassword", "style": { "navigationStyle": "custom" } },
 		{ "path": "pages/common/policy-webview", "style": { "navigationBarTitleText": "政策详情" } },
 		{ "path": "pages/customer-service/index", "style": { "navigationStyle": "custom" } },
-		{ "path": "pages/addshop/addShop", "style": { "navigationStyle": "custom" } },
-		{ "path": "pages/mp-shell/mp-shell", "style": { "navigationStyle": "custom", "disableScroll": true, "backgroundColor": "#F9F9F9" } }
+		{ "path": "pages/addshop/addShop", "style": { "navigationStyle": "custom" } }
 	],
 	"subPackages": [
 		{
@@ -83,14 +82,6 @@
 		}
 	],
 	"preloadRule": {
-		"pages/login/chooseUser": {
-			"network": "all",
-			"packages": ["pages/storeManage", "pages/aggregated-service", "pages/user"]
-		},
-		"pages/mp-shell/mp-shell": {
-			"network": "all",
-			"packages": ["pages/storeManage", "pages/aggregated-service", "pages/user"]
-		},
 		"pages/storeManage/storeManage": {
 			"network": "all",
 			"packages": ["pages/aggregated-service", "pages/user"]

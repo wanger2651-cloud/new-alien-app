@@ -1,8 +1,8 @@
 export function goAppHome(options: { reLaunch?: boolean } = {}) {
 	const { reLaunch = true } = options
 	// #ifdef MP-WEIXIN
-	// Tab Shell：单页 v-show 切换，避免 redirectTo 白屏
-	const homeUrl = '/pages/mp-shell/mp-shell?tab=manage'
+	// 主包 Tab Shell 无法引用分包页面组件，会白屏；使用分包页 + 自定义 TabBar
+	const homeUrl = '/pages/storeManage/storeManage?mpTab=1'
 	uni.reLaunch({
 		url: homeUrl,
 		fail: (err) => {

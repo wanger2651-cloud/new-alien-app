@@ -5,7 +5,7 @@
 import { onLoad } from '@dcloudio/uni-app'
 
 onLoad(() => {
-	uni.reLaunch({ url: '/pages/mp-shell/mp-shell?tab=manage' })
+	uni.reLaunch({ url: '/pages/storeManage/storeManage?mpTab=1' })
 })
 </script>
 

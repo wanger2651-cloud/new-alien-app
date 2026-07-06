@@ -807,7 +807,7 @@
 	import { parseDateSafe, parseDateTimestamp, formatDateYMD } from '@/utils/date'
 	import { navigateToMpAddShop, consumeStoreManageNeedRefresh } from '@/utils/mpAddShop'
 	import { readMpStoreListCache, writeMpStoreListCache } from '@/utils/mpStoreCache'
-	import { redirectToMpShellTab } from '@/utils/mpShell'
+	import { preloadMpTabPages } from '@/utils/mpTabPreload'
 	import {
 		onMounted,
 		ref,
@@ -4044,6 +4044,7 @@
 			getShopList(null, { deferQuickCounts: true })
 		}
 		getUserInfo()
+		preloadMpTabPages('/pages/storeManage/storeManage')
 		// #endif
 		// #ifndef MP-WEIXIN
 		getShopList()
@@ -4055,10 +4056,6 @@
 
 	onLoad((options) => {
 		// #ifdef MP-WEIXIN
-		if ((options?.mpTab === '1' || options?.mpTab === 'true') && !componentProps.embeddedTab) {
-			redirectToMpShellTab('manage')
-			return
-		}
 		mpTabMode.value = options?.mpTab === '1' || options?.mpTab === 'true'
 		// #endif
 		bootstrapPage(options)

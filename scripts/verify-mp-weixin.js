@@ -13,7 +13,6 @@ const mpDir = path.join(root, 'dist', 'build', 'mp-weixin')
 const REQUIRED = [
 	'app.json',
 	'project.config.json',
-	'pages/mp-shell/mp-shell.js',
 	'pages/storeManage/storeManage.js',
 	'pages/aggregated-service/aggregated-service.js',
 	'pages/user/index.js',

@@ -4357,7 +4357,7 @@
 		uni.navigateBack({
 			delta: 1,
 			fail: () => {
-				uni.redirectTo({ url: '/pages/mp-shell/mp-shell?tab=manage' })
+				uni.redirectTo({ url: '/pages/storeManage/storeManage?mpTab=1' })
 			}
 		})
 	}
