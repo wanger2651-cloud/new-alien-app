@@ -13,7 +13,15 @@
 			<view class="h5-tip"><text>请在APP中打开此页面</text></view>
 			<!-- #endif -->
 			<!-- #ifdef MP-WEIXIN -->
-			<web-view v-if="webviewUrl && !isLoading" class="mp-webview" :src="webviewUrl" />
+			<view v-if="webviewUrl && !isLoading" class="mp-auth-tip">
+				<text>{{ isRepair ? '请在下方完成店铺修复授权，完成后点击左上角返回刷新列表' : '请在下方完成店铺授权，完成后点击左上角返回刷新列表' }}</text>
+			</view>
+			<web-view
+				v-if="webviewUrl && !isLoading"
+				class="mp-webview"
+				:src="webviewUrl"
+				@message="handleMpWebMessage"
+			/>
 			<!-- #endif -->
 		</view>
 		<!-- 缩放按钮 - 使用 cover-view 确保显示在原生组件之上 -->
@@ -40,10 +48,23 @@
 	import { mapShopTypeToCookieType, extractShopIdFromCookie, formatCookieForPlatform } from '@/utils/shop-auth'
 	import { getPlatformName } from '@/utils/platforms'
 	import { buildShopAuthLink } from '@/utils/authLink'
+	import { markStoreManageNeedRefresh } from '@/utils/mpAddShop'
 
 	const authStore = useAuthStore()
 	// #ifdef MP-WEIXIN
 	const webviewUrl = ref('')
+	const handleMpWebMessage = (e) => {
+		const dataList = e?.detail?.data
+		if (!Array.isArray(dataList) || dataList.length === 0) return
+		const payload = dataList[dataList.length - 1]
+		if (payload?.success || payload?.type === 'shopAuthSuccess') {
+			markStoreManageNeedRefresh()
+			uni.showToast({ title: '授权成功', icon: 'success' })
+			setTimeout(() => {
+				uni.navigateBack({ delta: 1 })
+			}, 1200)
+		}
+	}
 	const initMpAuth = async () => {
 		isLoading.value = true
 		try {
@@ -136,6 +157,7 @@
 	})
 
 	const handleBack = () => {
+		markStoreManageNeedRefresh()
 		uni.navigateBack({
 			delta: 1
 		})
@@ -1097,6 +1119,20 @@
 		height: 100%;
 		font-size: 28rpx;
 		color: #999;
+	}
+
+	.mp-auth-tip {
+		padding: 16rpx 24rpx;
+		background: #fff8e6;
+		border-bottom: 1rpx solid #ffe58f;
+		font-size: 24rpx;
+		color: #ad6800;
+		line-height: 1.5;
+	}
+
+	.mp-webview {
+		width: 100%;
+		height: 100%;
 	}
 </style>
 

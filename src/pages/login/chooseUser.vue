@@ -83,7 +83,12 @@
 		// #endif
 		
 		// #ifdef MP-WEIXIN
-		currentVersion.value = '1.0.15'
+		try {
+			const accountInfo = uni.getAccountInfoSync?.()
+			currentVersion.value = accountInfo?.miniProgram?.version || '1.0.22'
+		} catch (e) {
+			currentVersion.value = '1.0.22'
+		}
 		// #endif
 		// #ifdef H5
 		currentVersion.value = '1.0.0'
@@ -157,7 +162,7 @@
 		// 	text: "我是商家"
 		// },
 		{
-			image: "/static/choose/yy.png",
+			image: "/static/choose/app-logo.png",
 			text: "欢迎使用"
 		}
 	]
@@ -207,10 +212,11 @@
 
 			.sjImg {
 				position: absolute;
-				top: -64rpx;
-				left: 71rpx;
-				width: 194rpx;
-				height: 200rpx;
+				top: -48rpx;
+				left: 50%;
+				transform: translateX(-50%);
+				width: 160rpx;
+				height: 160rpx;
 			}
 
 			.box-text {

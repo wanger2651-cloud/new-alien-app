@@ -39,6 +39,7 @@
 	// #ifdef MP-WEIXIN
 	import MpTabBar from '@/components/MpTabBar.vue'
 	import { onLoad } from '@dcloudio/uni-app'
+	import { redirectToMpShellTab } from '@/utils/mpShell'
 	// #endif
 	import {
 		ref,
@@ -98,6 +99,10 @@
 
 	// #ifdef MP-WEIXIN
 	onLoad((options) => {
+		if ((options?.mpTab === '1' || options?.mpTab === 'true') && !props.embeddedTab) {
+			redirectToMpShellTab('aggregated')
+			return
+		}
 		mpTabMode.value = options?.mpTab === '1' || options?.mpTab === 'true'
 	})
 	// #endif

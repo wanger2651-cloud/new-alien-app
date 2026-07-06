@@ -200,10 +200,12 @@
 			@touchmove.prevent.stop
 			@touchstart.stop
 		>
-			<!-- 麦克风按钮（左侧） -->
+			<!-- 麦克风按钮（左侧）- 小程序暂不支持语音录制 -->
+			<!-- #ifndef MP-WEIXIN -->
 			<view class="voice-btn" @click="toggleVoiceMode">
 				<text class="voice-icon">🎤</text>
 			</view>
+			<!-- #endif -->
 			
 			<!-- 输入框区域 -->
 			<view class="input-wrapper">

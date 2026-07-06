@@ -1,4 +1,5 @@
 <template>
+	<view class="manage-card-wrap">
 	<view class="baseItem">
 		<view class="itemOne">
 			<view class="oneLeft">
@@ -24,7 +25,7 @@
 				<view class="detail-item">
 					<view class="detail-item-main">
 						<view class="detail-item-num">
-							{{ shopType == 1 ? percentage.mealReportPercent : serviceCookingUpload.cooking_upload_rate_7d * 100 }}%
+							{{ shopType == 1 ? (percentage?.mealReportPercent || 0) : formatPercent(serviceCookingUpload?.cooking_upload_rate_7d) }}%
 						</view>
 						<view class="detail-item-text">7日出餐上报率</view>
 					</view>
@@ -32,7 +33,7 @@
 				<view class="detail-item" style="margin-left: 60rpx;">
 					<view class="detail-item-main">
 						<view class="detail-item-num">
-							{{ shopType == 1 ? percentage.realMealReportPercent : serviceCookingUpload.cooking_real_upload_rate_7d * 100 }}%
+							{{ shopType == 1 ? (percentage?.realMealReportPercent || 0) : formatPercent(serviceCookingUpload?.cooking_real_upload_rate_7d) }}%
 						</view>
 						<view class="detail-item-text">7日出餐真实上报率</view>
 					</view>
@@ -41,13 +42,13 @@
 			<view class="data-detail" v-if="logoText === 'IM自动回复'">
 				<view class="detail-item">
 					<view class="detail-item-main">
-						<view class="detail-item-num">{{ shopType == 1 ? statusDesc.status1 : currentMedal.silver }}</view>
+						<view class="detail-item-num">{{ shopType == 1 ? (statusDesc?.status1 || '—') : (currentMedal?.silver || '—') }}</view>
 						<view class="detail-item-text">{{ shopType == 1 ? '近7日五分钟回复率' : '银牌回复权益' }}</view>
 					</view>
 				</view>
 				<view class="detail-item" style="margin-left: 10rpx;" :class="{ 'is-elm-detail-item': shopType == 2 }">
 					<view class="detail-item-main">
-						<view class="detail-item-num">{{ shopType == 1 ? statusDesc.status2 : currentMedal.gold }}</view>
+						<view class="detail-item-num">{{ shopType == 1 ? (statusDesc?.status2 || '—') : (currentMedal?.gold || '—') }}</view>
 						<view class="detail-item-text">{{ shopType == 1 ? '紧急消息1分钟回复率' : '金牌回复权益' }}</view>
 					</view>
 				</view>
@@ -55,13 +56,13 @@
 			<view class="data-detail" v-if="logoText === '自动回评'">
 				<view class="detail-item">
 					<view class="detail-item-main">
-						<view class="detail-item-num">{{ shopType == 1 ? comment.favorable : '暂无数据'}}<text v-if="shopType == 1">/条</text></view>
+						<view class="detail-item-num">{{ shopType == 1 ? (comment?.favorable ?? '暂无数据') : '暂无数据' }}<text v-if="shopType == 1">/条</text></view>
 						<view class="detail-item-text">今日新增好评数</view>
 					</view>
 				</view>
 				<view class="detail-item" style="margin-left: 70rpx;">
 					<view class="detail-item-main">
-						<view class="detail-item-num">{{ shopType == 1 ? comment.mid : '暂无数据'}}<text v-if="shopType == 1">/条</text></view>
+						<view class="detail-item-num">{{ shopType == 1 ? (comment?.mid ?? '暂无数据') : '暂无数据' }}<text v-if="shopType == 1">/条</text></view>
 						<view class="detail-item-text">今日新增中评数</view>
 					</view>
 				</view>
@@ -71,8 +72,8 @@
 					<view class="detail-item-main">
 						<view class="detail-item-text">曝光量</view>
 						<view class="detail-item-num">
-							{{ shopType == 1 ? effect.showCount : elmQueryShopRealtimeInfo.expUv }}
-							<view v-if="effect.showCount" class="detail-item-num-unit">次</view>
+							{{ shopType == 1 ? (effect?.showCount || 0) : (elmQueryShopRealtimeInfo?.expUv || 0) }}
+							<view v-if="effect?.showCount" class="detail-item-num-unit">次</view>
 						</view>
 					</view>
 				</view>
@@ -80,9 +81,9 @@
 					<view class="detail-item-main">
 						<view class="detail-item-text">{{ shopType == 1 ? '进店提升数' : '下单转化率' }}</view>
 						<view class="detail-item-num">
-							{{ shopType == 1 ? effect.clickCount : (elmQueryShopRealtimeInfo.ordClkRate ? (elmQueryShopRealtimeInfo.ordClkRate * 100).toFixed(2) : 0) }}
-							<view v-if="effect.clickCount" class="detail-item-num-unit">次</view>
-							<view v-if="elmQueryShopRealtimeInfo.ordClkRate" class="detail-item-num-unit">%</view>
+							{{ shopType == 1 ? (effect?.clickCount || 0) : formatPercent(elmQueryShopRealtimeInfo?.ordClkRate) }}
+							<view v-if="effect?.clickCount" class="detail-item-num-unit">次</view>
+							<view v-if="elmQueryShopRealtimeInfo?.ordClkRate" class="detail-item-num-unit">%</view>
 						</view>
 					</view>
 				</view>
@@ -90,8 +91,8 @@
 					<view class="detail-item-main">
 						<view class="detail-item-text">进店率</view>
 						<view class="detail-item-num">
-							{{ shopType == 1 ? effect.clickRate : (elmQueryShopRealtimeInfo.clkExpRate ? (elmQueryShopRealtimeInfo.clkExpRate * 100).toFixed(2) : 0) }}
-							<view v-if="effect.clickRate || elmQueryShopRealtimeInfo.clkExpRate"
+							{{ shopType == 1 ? (effect?.clickRate || 0) : formatPercent(elmQueryShopRealtimeInfo?.clkExpRate) }}
+							<view v-if="effect?.clickRate || elmQueryShopRealtimeInfo?.clkExpRate"
 								class="detail-item-num-unit">%</view>
 						</view>
 					</view>
@@ -138,7 +139,7 @@
 					<!-- 动态渲染所有字段 -->
 					<view 
 						class="config-item" 
-						v-for="(prop, key) in configSchema.properties" 
+						v-for="(prop, key) in (configSchema.properties || {})" 
 						:key="key">
 						<!-- 分组选择 -->
 						<template v-if="key === 'GroupOffIds'">
@@ -985,6 +986,7 @@
 			</view>
 		</view>
 	</wd-popup>
+	</view>
 </template>
 
 <script setup>
@@ -997,7 +999,7 @@
 	import {
 		useRouter
 	} from '@/utils/router';
-	import { parseDateSafe } from '@/utils/date'
+	import { parseDateSafe, formatDateYMD } from '@/utils/date'
 	const emit = defineEmits(['addMoney', 'update:modelValue'])
 	const router = useRouter()
 	let check = ref(false)
@@ -2731,10 +2733,16 @@
 			code: props.currentItem?.code
 		});
 	}
+	const formatPercent = (val) => {
+		const n = Number(val)
+		return Number.isFinite(n) ? (n <= 1 ? Math.round(n * 100) : Math.round(n)) : 0
+	}
+
 	const filterTime = (time) => {
-		if (time) {
-			return time.slice(0, 10)
-		}
+		if (!time) return ''
+		if (typeof time === 'string') return time.slice(0, 10)
+		const formatted = formatDateYMD(time, '')
+		return formatted || String(time).slice(0, 10)
 	}
 	const filterFunName = (str) => {
 		if (str === '自动出餐') {
@@ -2846,6 +2854,10 @@
 </script>
 
 <style scoped lang="scss">
+	.manage-card-wrap {
+		width: 100%;
+	}
+
 	.baseItem {
 		width: 100%;
 		background: #F6F6F6;

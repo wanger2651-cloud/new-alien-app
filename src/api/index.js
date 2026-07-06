@@ -23,8 +23,8 @@ export default function api(url, data = {}) {
 			content: '登录失效，是否重新登录？',
 			success: async (res) => {
 				if (res.confirm) {
-					uni.reLaunch({ //reLaunch
-						url: '/pages/login/login'
+					uni.reLaunch({
+						url: '/pages/login/chooseUser'
 					})
 				}
 			}

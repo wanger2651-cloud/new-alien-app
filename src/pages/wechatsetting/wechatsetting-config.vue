@@ -208,11 +208,11 @@
   
   // 模板图片映射 - 使用相对路径（从pages目录到static目录）
   const templateImageMap = {
-    newReview: '../../static/img/Yesterday\'s review.png',
-    expireAlert: '../../static/img/Function expired.png',
-    promotionAbnormal: '../../static/img/Promotion anomaly.png',
-    dayReport: '../../static/img/Daily Report.png',
-    offlineAlert: '../../static/img/Store offline.png'
+    newReview: '/static/img/yesterdays-review.png',
+    expireAlert: '/static/img/yesterdays-review.png',
+    promotionAbnormal: '/static/img/yesterdays-review.png',
+    dayReport: '/static/img/yesterdays-review.png',
+    offlineAlert: '/static/img/yesterdays-review.png'
   }
   
   // 显示模板

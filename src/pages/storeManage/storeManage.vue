@@ -562,8 +562,9 @@
 
 	<!---功能激活弹窗-->
 	<wd-action-sheet v-model="authGoodsVisible" :z-index="1004" @close="handleClose">
-			<SettingPopupPlanContent :is-full-popup-plan="isFullPopupPlan" :isV2="true"
-				:shopId="shopId" :priceTitle="payParams.pricetitle" @close-popup="closeAuthGoodsVisibleHandler"
+			<SettingPopupPlanContent v-if="authGoodsVisible" :is-full-popup-plan="isFullPopupPlan" :isV2="true"
+				:shopId="shopId" :priceTitle="payParams.pricetitle" :authGoodsList="payList"
+				@close-popup="closeAuthGoodsVisibleHandler"
 			:shopType="payParams.shoptype" :currentFuncCode="currentRenewFuncCode" :isIMKefuRenew="isIMKefuRenew"
 			@success="subscribe" @updataShopFunc="updataShopFunc" />
 		</wd-action-sheet>
@@ -804,6 +805,9 @@
 	} from '@/api/login'
 	import request from '@/utils/request'
 	import { parseDateSafe, parseDateTimestamp, formatDateYMD } from '@/utils/date'
+	import { navigateToMpAddShop, consumeStoreManageNeedRefresh } from '@/utils/mpAddShop'
+	import { readMpStoreListCache, writeMpStoreListCache } from '@/utils/mpStoreCache'
+	import { redirectToMpShellTab } from '@/utils/mpShell'
 	import {
 		onMounted,
 		ref,
@@ -1594,6 +1598,11 @@
 			}, 500)
 		}, 500)
 		// #endif
+		// #ifndef H5
+		// #ifndef APP-PLUS
+		navigateToMpAddShop(normalizeStoreManageShopType(queryParams.filter.shopType), isRepair.value)
+		// #endif
+		// #endif
 	}
 	
 	// 启动美团平台cookie监听（参考 addShop.vue 的逻辑）
@@ -1771,6 +1780,11 @@
 			}, 500)
 		}, 500)
 		// #endif
+		// #ifndef H5
+		// #ifndef APP-PLUS
+		navigateToMpAddShop(normalizeStoreManageShopType(queryParams.filter.shopType), isRepair.value)
+		// #endif
+		// #endif
 	}
 
 	// 京东外卖/京东秒送添加门店
@@ -1829,6 +1843,11 @@
 				startJdCookieMonitoring()
 			}, 500)
 		}, 500)
+		// #endif
+		// #ifndef H5
+		// #ifndef APP-PLUS
+		navigateToMpAddShop(normalizeStoreManageShopType(queryParams.filter.shopType), isRepair.value)
+		// #endif
 		// #endif
 	}
 	
@@ -2297,6 +2316,11 @@
 			}, 500)
 		}, 500)
 		// #endif
+		// #ifndef H5
+		// #ifndef APP-PLUS
+		navigateToMpAddShop(normalizeStoreManageShopType(queryParams.filter.shopType), isRepair.value)
+		// #endif
+		// #endif
 	}
 
 
@@ -2356,7 +2380,7 @@
 			work_time,
 			user,
 			id,
-			// 将经营数据一并存储，供设置门店页面使用
+			office_id: currentShop.office_id,
 			income,
 			order_num,
 			show_num
@@ -2375,8 +2399,10 @@
 	const handleClose = () => {
 		isFullPopupPlan.value = false
 		isIMKefuRenew.value = false
+		currentRenewFuncCode.value = ''
 	}
-	const getPayList = async () => {
+	const getPayList = async (options = {}) => {
+		const silentEmpty = !!options.silentEmpty
 		uni.showLoading({
 			title: '加载中',
 			mask: true
@@ -2411,11 +2437,13 @@
 			payList.value = tempList
 
 			if (payList.value.length === 0) {
-				uni.showToast({
-					title: '暂无可用规格',
-					icon: 'none',
-					duration: 3000
-				})
+				if (!silentEmpty) {
+					uni.showToast({
+						title: '该功能暂无可购规格，请联系客服',
+						icon: 'none',
+						duration: 3000
+					})
+				}
 				return
 			}
 			authGoodsVisible.value = true
@@ -2465,6 +2493,8 @@
 		} else if (isFuncCode) {
 			// 单个功能续费，使用功能名称 + '_月' 作为 priceTitle（与 shop-management 页面保持一致）
 			isFullPopupPlan.value = false
+			isIMKefuRenew.value = false
+			currentRenewFuncCode.value = codeOrStr
 			const funcName = FUNC_CODE_NAME_MAP[codeOrStr] || codeOrStr
 			payParams.pricetitle = funcName + '_月'  // 使用功能名称 + '_月'，如 '自动出餐_月' 或 'IM自动回复_月'
 			payParams.isKeyWord = false  // 单个功能续费不使用关键词模式
@@ -2479,7 +2509,30 @@
 			return
 		}
 	}
+	const isShopFuncExpired = (item, funcCode) => {
+		const endTimeKey = funcCode + 'endTime'
+		const endTime = item[endTimeKey]
+		if (!endTime) return true
+		try {
+			const endDate = parseDateSafe(endTime)
+			if (!endDate) return true
+			const now = new Date()
+			now.setHours(0, 0, 0, 0)
+			endDate.setHours(0, 0, 0, 0)
+			return endDate < now
+		} catch (e) {
+			return true
+		}
+	}
+
 	const beforeChangeFun = (obj, code, str) => {
+		// 已到期功能开启时直接走续费弹窗，避免无效 API 请求
+		if (obj[code] && isShopFuncExpired(obj, code)) {
+			obj[code] = false
+			onPopupHandler(obj, code, str)
+			return
+		}
+
 		uni.showLoading()
 		
 		// 根据功能代码获取功能名称
@@ -2618,6 +2671,7 @@
 	const closeAuthGoodsVisibleHandler = () => {
 		authGoodsVisible.value = false
 		isIMKefuRenew.value = false
+		currentRenewFuncCode.value = ''
 	}
 	const delShop = (item) => {
 		// 调用 uni.showModal 方法
@@ -2950,6 +3004,7 @@
 		getShopList()
 	}
 	const openFilter = () => {
+		ensureFilterMeta()
 		filterState.value = true
 	}
 	const closeFilter = () => {
@@ -3067,11 +3122,75 @@
 	const bindShop = () => {
 		bindState.value = true
 	}
-	const getShopList = (preserveScrollTop = null) => {
-		uni.showLoading({
-			title: '加载中',
-			mask: true
+	const applyFuncFlagsToShopRows = (rows) => {
+		rows.forEach(item => {
+			// v1接口使用func_info，v2接口使用extra_data.func_enable
+			let funcInfo = item.func_info || item.extra_data?.func_enable
+			if (funcInfo && funcInfo.length) {
+				item.ZDCC = funcInfo.find(itemA => itemA.code == 'ZDCC')?.enable || false;
+				const zdccFunc = funcInfo.find(itemA => itemA.code == 'ZDCC')
+				item.ZDCCtime = time(zdccFunc?.end_time)
+				item.ZDCCendTime = zdccFunc?.end_time || null // 保存原始时间用于计算剩余天数
+				const zdhpFunc = funcInfo.find(itemA => itemA.code == 'ZDHP')
+				item.ZDHP = zdhpFunc?.enable || false
+				item.ZDHPtime = time(zdhpFunc?.end_time)
+				item.ZDHPendTime = zdhpFunc?.end_time || null // 保存原始时间用于计算剩余天数
+				
+				const kefuFunc = funcInfo.find(itemA => itemA.code == 'KEFU')
+				item.KEFU = kefuFunc?.enable || false
+				item.KEFUtime = time(kefuFunc?.end_time)
+				item.KEFUendTime = kefuFunc?.end_time || null
+				
+				const imzdhfFunc = funcInfo.find(itemA => itemA.code == 'IMZDHF')
+				item.IMZDHF = imzdhfFunc?.enable || false
+				item.IMZDHFtime = time(imzdhfFunc?.end_time)
+				item.IMZDHFendTime = imzdhfFunc?.end_time || null // 保存原始时间用于计算剩余天数
+				
+				const zdtgFunc = funcInfo.find(itemA => itemA.code == 'ZDTG')
+				item.ZDTG = zdtgFunc?.enable || false
+				item.ZDTGtime = time(zdtgFunc?.end_time)
+				item.ZDTGendTime = zdtgFunc?.end_time || null // 保存原始时间用于计算剩余天数
+				
+				const pjssFunc = funcInfo.find(itemA => itemA.code == 'PJSS')
+				item.PJSS = pjssFunc?.enable || false
+				item.PJSStime = time(pjssFunc?.end_time)
+				item.PJSSendTime = pjssFunc?.end_time || null // 保存原始时间用于计算剩余天数
+				item.CPDT = funcInfo.find(itemA => itemA.code == 'CPDT')?.enable || false
+				item.CPDTtime = funcInfo.find(itemA => itemA.code == 'CPDT')?.end_time
+				item.CPDTtimetext = time(funcInfo.find(itemA => itemA.code == 'CPDT')
+					?.end_time)
+			} else {
+				item.ZDCC = false
+				item.ZDCCtime = '已到期'
+				item.ZDCCendTime = null
+				item.ZDHP = false
+				item.ZDHPtime = '已到期'
+				item.ZDHPendTime = null
+				item.KEFU = false
+				item.KEFUtime = '已到期'
+				item.KEFUendTime = null
+				item.IMZDHF = false
+				item.IMZDHFtime = '已到期'
+				item.IMZDHFendTime = null
+				item.ZDTG = false
+				item.ZDTGtime = '已到期'
+				item.ZDTGendTime = null
+				item.PJSS = false
+				item.PJSStime = '已到期'
+				item.PJSSendTime = null
+				item.CPDTtime = ""
+			}
 		})
+		return rows
+	}
+	const getShopList = (preserveScrollTop = null, options = {}) => {
+		const { silent = false, skipQuickCounts = false, deferQuickCounts = false } = options
+		if (!silent) {
+			uni.showLoading({
+				title: '加载中',
+				mask: true
+			})
+		}
 		const apiQueryParams = JSON.parse(JSON.stringify(queryParams))
 		if (apiQueryParams.filter && apiQueryParams.filter.shopType !== undefined && apiQueryParams.filter.shopType !== null) {
 			const shopTypeNum = Number(apiQueryParams.filter.shopType)
@@ -3082,71 +3201,20 @@
 
 		ShopApi.getList(apiQueryParams).then(res => {
 			if (res.code === 200) {
-				shopList.value = res.data.rows
+				shopList.value = applyFuncFlagsToShopRows(res.data.rows)
 				total.value = res.data.total
 				// 更新当前平台类型的数量（使用实际列表的总数）
 				const currentPlatform = props.value.list.find(item => item.shopType === queryParams.filter.shopType)
 				if (currentPlatform) {
 					currentPlatform.count = res.data.total
 				}
-				shopList.value.forEach(item => {
-					// v1接口使用func_info，v2接口使用extra_data.func_enable
-					let funcInfo = item.func_info || item.extra_data?.func_enable
-					if (funcInfo && funcInfo.length) {
-						item.ZDCC = funcInfo.find(itemA => itemA.code == 'ZDCC')?.enable || false;
-						const zdccFunc = funcInfo.find(itemA => itemA.code == 'ZDCC')
-						item.ZDCCtime = time(zdccFunc?.end_time)
-						item.ZDCCendTime = zdccFunc?.end_time || null // 保存原始时间用于计算剩余天数
-						const zdhpFunc = funcInfo.find(itemA => itemA.code == 'ZDHP')
-						item.ZDHP = zdhpFunc?.enable || false
-						item.ZDHPtime = time(zdhpFunc?.end_time)
-						item.ZDHPendTime = zdhpFunc?.end_time || null // 保存原始时间用于计算剩余天数
-						
-						const kefuFunc = funcInfo.find(itemA => itemA.code == 'KEFU')
-						item.KEFU = kefuFunc?.enable || false
-						item.KEFUtime = time(kefuFunc?.end_time)
-						item.KEFUendTime = kefuFunc?.end_time || null
-						
-						const imzdhfFunc = funcInfo.find(itemA => itemA.code == 'IMZDHF')
-						item.IMZDHF = imzdhfFunc?.enable || false
-						item.IMZDHFtime = time(imzdhfFunc?.end_time)
-						item.IMZDHFendTime = imzdhfFunc?.end_time || null // 保存原始时间用于计算剩余天数
-						
-						const zdtgFunc = funcInfo.find(itemA => itemA.code == 'ZDTG')
-						item.ZDTG = zdtgFunc?.enable || false
-						item.ZDTGtime = time(zdtgFunc?.end_time)
-						item.ZDTGendTime = zdtgFunc?.end_time || null // 保存原始时间用于计算剩余天数
-						
-						const pjssFunc = funcInfo.find(itemA => itemA.code == 'PJSS')
-						item.PJSS = pjssFunc?.enable || false
-						item.PJSStime = time(pjssFunc?.end_time)
-						item.PJSSendTime = pjssFunc?.end_time || null // 保存原始时间用于计算剩余天数
-						item.CPDT = funcInfo.find(itemA => itemA.code == 'CPDT')?.enable || false
-						item.CPDTtime = funcInfo.find(itemA => itemA.code == 'CPDT')?.end_time
-						item.CPDTtimetext = time(funcInfo.find(itemA => itemA.code == 'CPDT')
-							?.end_time)
-					} else {
-						item.ZDCC = false
-						item.ZDCCtime = '已到期'
-						item.ZDCCendTime = null
-						item.ZDHP = false
-						item.ZDHPtime = '已到期'
-						item.ZDHPendTime = null
-						item.KEFU = false
-						item.KEFUtime = '已到期'
-						item.KEFUendTime = null
-						item.IMZDHF = false
-						item.IMZDHFtime = '已到期'
-						item.IMZDHFendTime = null
-						item.ZDTG = false
-						item.ZDTGtime = '已到期'
-						item.ZDTGendTime = null
-						item.PJSS = false
-						item.PJSStime = '已到期'
-						item.PJSSendTime = null
-						item.CPDTtime = ""
-					}
+				// #ifdef MP-WEIXIN
+				writeMpStoreListCache({
+					shopType: Number(queryParams.filter.shopType) || 1,
+					rows: shopList.value,
+					total: total.value,
 				})
+				// #endif
 				// 处理滚动位置：如果传入了 preserveScrollTop，则保持该滚动位置，否则重置为0（切换页面时）
 				if (preserveScrollTop !== null) {
 					// 使用 nextTick 确保在 DOM 更新后恢复滚动位置
@@ -3160,12 +3228,20 @@
 					})
 				}
 				// 刷新顶部快捷筛选统计
-				refreshQuickFilterCounts()
+				if (!skipQuickCounts) {
+					if (deferQuickCounts) {
+						setTimeout(() => refreshQuickFilterCounts(), 400)
+					} else {
+						refreshQuickFilterCounts()
+					}
+				}
 			}
 		}).catch(err => {
 			// 错误处理，静默处理
 		}).finally(() => {
-			uni.hideLoading({})
+			if (!silent) {
+				uni.hideLoading({})
+			}
 			isRefreshing.value = false
 		})
 	}
@@ -3900,6 +3976,14 @@
 	}
 	
 	onShow(() => {
+		if (consumeStoreManageNeedRefresh()) {
+			getShopList()
+		}
+		// 从子页面返回时关闭可能残留的续费弹层，避免误触发规格加载
+		authGoodsVisible.value = false
+		currentRenewFuncCode.value = ''
+		isIMKefuRenew.value = false
+
 		// 恢复滚动位置
 		const savedScrollTop = uni.getStorageSync('storeManage_scrollTop')
 		if (savedScrollTop !== undefined && savedScrollTop !== null && savedScrollTop > 0) {
@@ -3926,6 +4010,13 @@
 	})
 	
 	let pageReady = false
+	let filterMetaLoaded = false
+	const ensureFilterMeta = () => {
+		if (filterMetaLoaded) return
+		filterMetaLoaded = true
+		getprovincewithcitys()
+		getGroupList()
+	}
 	const bootstrapPage = (options = {}) => {
 		if (pageReady) return
 		pageReady = true
@@ -3938,14 +4029,36 @@
 			saveStoredShopType(st)
 		}
 		getSupportedFuncList(queryParams.filter.shopType)
+		// #ifdef MP-WEIXIN
+		const shopTypeNum = Number(queryParams.filter.shopType) || 1
+		const cached = readMpStoreListCache(shopTypeNum)
+		if (cached) {
+			shopList.value = cached.rows
+			total.value = cached.total
+			const currentPlatform = props.value.list.find(item => item.shopType === shopTypeNum)
+			if (currentPlatform) {
+				currentPlatform.count = cached.total
+			}
+			getShopList(null, { silent: true, deferQuickCounts: true })
+		} else {
+			getShopList(null, { deferQuickCounts: true })
+		}
+		getUserInfo()
+		// #endif
+		// #ifndef MP-WEIXIN
 		getShopList()
 		getprovincewithcitys()
 		getGroupList()
 		getUserInfo()
+		// #endif
 	}
 
 	onLoad((options) => {
 		// #ifdef MP-WEIXIN
+		if ((options?.mpTab === '1' || options?.mpTab === 'true') && !componentProps.embeddedTab) {
+			redirectToMpShellTab('manage')
+			return
+		}
 		mpTabMode.value = options?.mpTab === '1' || options?.mpTab === 'true'
 		// #endif
 		bootstrapPage(options)

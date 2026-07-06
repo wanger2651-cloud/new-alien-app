@@ -11,11 +11,16 @@ export const openOnlineServiceInBrowser = () => {
 	openExternalUrl(ONLINE_SERVICE_URL, '在线客服')
 }
 
-/** 打开在线客服：统一进 App 内客服页，避免鸿蒙弹「暂无可用打开方式」 */
+/** 打开在线客服：小程序复制链接，App 内打开客服页 */
 export const openOnlineService = () => {
+	// #ifdef MP-WEIXIN
+	openOnlineServiceInBrowser()
+	// #endif
+	// #ifndef MP-WEIXIN
 	uni.navigateTo({
 		url: '/pages/customer-service/index'
 	})
+	// #endif
 }
 
 export const isHarmonyPlatform = (): boolean => {

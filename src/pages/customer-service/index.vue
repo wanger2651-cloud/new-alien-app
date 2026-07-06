@@ -4,7 +4,6 @@
 			<text class="back-text">‹ 返回</text>
 		</view>
 
-		<!-- 鸿蒙：web-view 内无法正常输入，改用原生页 + 复制链接 -->
 		<!-- #ifdef APP-HARMONY -->
 		<view class="native-body">
 			<text class="native-title">在线客服</text>
@@ -14,12 +13,23 @@
 		</view>
 		<!-- #endif -->
 
+		<!-- #ifdef MP-WEIXIN -->
+		<view class="native-body">
+			<text class="native-title">在线客服</text>
+			<text class="native-desc">受微信小程序限制，暂无法在小程序内直接打开客服对话框。请点击下方按钮复制链接，在手机浏览器中打开即可与客服对话。</text>
+			<button class="native-btn" @tap="copyServiceLink">复制客服链接</button>
+			<text class="native-tip">复制后打开浏览器，粘贴到地址栏访问</text>
+		</view>
+		<!-- #endif -->
+
 		<!-- #ifndef APP-HARMONY -->
+		<!-- #ifndef MP-WEIXIN -->
 		<web-view v-if="serviceUrl" class="service-webview" :src="serviceUrl" @error="handleWebError" />
 		<view v-if="!serviceUrl" class="fallback">
 			<text class="fallback-text">在线客服加载失败，请稍后重试</text>
 			<button class="fallback-btn" @tap="copyServiceLink">复制客服链接</button>
 		</view>
+		<!-- #endif -->
 		<!-- #endif -->
 	</view>
 </template>
@@ -38,6 +48,11 @@ const topPadding = `calc(env(safe-area-inset-top) + 12rpx)`
 const serviceUrl = ref(ONLINE_SERVICE_HYBRID_URL)
 
 const goBack = () => {
+	const pages = getCurrentPages()
+	if (pages.length > 1) {
+		uni.navigateBack({ delta: 1 })
+		return
+	}
 	uni.redirectTo({ url: LOGIN_FALLBACK })
 }
 

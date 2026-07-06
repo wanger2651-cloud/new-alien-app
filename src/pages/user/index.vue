@@ -182,6 +182,7 @@
 <script setup>
 	// #ifdef MP-WEIXIN
 	import MpTabBar from '@/components/MpTabBar.vue'
+	import { redirectToMpShellTab } from '@/utils/mpShell'
 	// #endif
 	import {
 		ref,
@@ -627,6 +628,10 @@
 
 	onLoad((options) => {
 		// #ifdef MP-WEIXIN
+		if ((options?.mpTab === '1' || options?.mpTab === 'true') && !props.embeddedTab) {
+			redirectToMpShellTab('user')
+			return
+		}
 		mpTabMode.value = options?.mpTab === '1' || options?.mpTab === 'true'
 		// #endif
 		getSysteminfo()

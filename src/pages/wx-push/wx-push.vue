@@ -1,7 +1,18 @@
 <template>
 	<view class="store" :style="{paddingTop: systemBarHeight + 'px'}">
+		<!-- #ifdef MP-WEIXIN -->
+		<view class="mp-nav" :style="{ paddingTop: systemBarHeight + 'px' }">
+			<view class="mp-nav__inner" @tap="handleWxPushBack">
+				<text class="mp-nav__back">‹ 返回</text>
+				<text class="mp-nav__title">微信推送-经营日报推送</text>
+				<view class="mp-nav__placeholder"></view>
+			</view>
+		</view>
+		<!-- #endif -->
+		<!-- #ifndef MP-WEIXIN -->
 		<wd-navbar :fixed="true" :safeAreaInsetTop="true" title="微信推送-经营日报推送" :bordered="false"></wd-navbar>
-		<view class="header-fixed-container" style="position: fixed;width: 100%;left: 0;z-index: 12;top: 0;overflow: visible;padding-bottom: 50rpx;height: calc(10px + 7.15625rem + 50rpx);min-height: calc(10px + 7.15625rem + 50rpx);" :style="`background: ${currentPlatformBgColor};`">
+		<!-- #endif -->
+		<view class="header-fixed-container" style="position: fixed;width: 100%;left: 0;z-index: 12;overflow: visible;padding-bottom: 50rpx;height: calc(10px + 7.15625rem + 50rpx);min-height: calc(10px + 7.15625rem + 50rpx);" :style="headerFixedStyle">
 			<!-- 底部遮罩层：防止店铺卡片溢出 -->
 			<view class="header-bottom-mask" :style="`background: ${currentPlatformBgColor};`"></view>
 			<view class="" style="position: absolute; width: 100%; z-index: 13;" :style="`top: calc(${systemBarHeight}px + 44px);`">
@@ -505,7 +516,7 @@
 
 		<!---全功能购买-->
 		<wd-action-sheet v-model="authGoodsVisible" :z-index="600" @close="handleClose">
-			<SettingPopupPlanContent :is-full-popup-plan="isFullPopupPlan" :auth-goods-list="payList" :isV2="true"
+			<SettingPopupPlanContent v-if="authGoodsVisible" :is-full-popup-plan="isFullPopupPlan" :auth-goods-list="payList" :isV2="true"
 				:shopId="shopId" :priceTitle="payParams.pricetitle" @close-popup="closeAuthGoodsVisibleHandler"
 				:shopType="payParams.shoptype" @success="subscribe" />
 		</wd-action-sheet>
@@ -571,6 +582,7 @@
 	} from '@/api/functionPrice.ts'
 	import { getRenewQuoteList } from '@/api/pay'
 	import { mapPayQuoteToSpecRow } from '@/utils/payRenewFlow'
+	import { navigateToMpAddShop, openMerchantPortalOnMp } from '@/utils/mpAddShop'
 	import {
 		UserApi
 	} from '@/api/login'
@@ -1071,6 +1083,10 @@
 	
 	const addShopByLogin = () => {
 		const shopType = queryParams.filter.shopType
+		// #ifdef MP-WEIXIN
+		navigateToMpAddShop(Number(shopType) || 1, false)
+		return
+		// #endif
 		if (shopType === 1) {
 			// 美团外卖
 			meituan()
@@ -3266,6 +3282,20 @@
 		const colors = platformBgColors[tab.value] || ['#F9F9F9', '#FFFFFF']
 		return `linear-gradient(180deg, ${colors[0]} 0%, ${colors[1]} 100%)`
 	})
+
+	const headerFixedStyle = computed(() => {
+		// #ifdef MP-WEIXIN
+		return {
+			top: '0',
+			marginTop: `calc(${systemBarHeight.value}px + 44px)`,
+			background: currentPlatformBgColor.value
+		}
+		// #endif
+		return {
+			top: '0',
+			background: currentPlatformBgColor.value
+		}
+	})
 	
 	// 计算当前平台边框颜色
 	const currentPlatformBorderColor = computed(() => {
@@ -3814,8 +3844,14 @@
 				return
 			}
 			
-			// 根据店铺类型打开对应的后台
 			const shopType = item.shop_type || tab.value
+			// #ifdef MP-WEIXIN
+			uni.hideLoading()
+			openMerchantPortalOnMp(Number(shopType) || 1)
+			return
+			// #endif
+
+			// 根据店铺类型打开对应的后台
 			openShopBackendWebview(cookie, shopType, item.office_id)
 			
 		} catch (error) {
@@ -4316,6 +4352,14 @@
 				platform.value = res.platform || '';
 			}
 		});
+	}
+	const handleWxPushBack = () => {
+		uni.navigateBack({
+			delta: 1,
+			fail: () => {
+				uni.redirectTo({ url: '/pages/mp-shell/mp-shell?tab=manage' })
+			}
+		})
 	}
 	// 监听店铺类型变化，重新获取功能列表
 	watch(() => queryParams.filter.shopType, (newShopType) => {
@@ -7450,6 +7494,37 @@
 
 	::v-deep .wd-navbar {
 		background-color: transparent;
+	}
+
+	.mp-nav {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 1000;
+		background: transparent;
+
+		&__inner {
+			height: 44px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 0 24rpx;
+		}
+
+		&__back,
+		&__title {
+			font-size: 30rpx;
+			color: #333;
+		}
+
+		&__title {
+			font-weight: 600;
+		}
+
+		&__placeholder {
+			width: 80rpx;
+		}
 	}
 
 	.copy-activate-btn {

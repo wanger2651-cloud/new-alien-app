@@ -1,8 +1,19 @@
 <template>
 	<view class="manage">
+		<!-- #ifdef MP-WEIXIN -->
+		<view class="mp-nav" :style="{ paddingTop: systemBarHeight + 'px' }">
+			<view class="mp-nav__inner" @tap="handleClickLeft">
+				<text class="mp-nav__back">‹ 返回</text>
+				<text class="mp-nav__title">店铺管理</text>
+				<view class="mp-nav__placeholder"></view>
+			</view>
+		</view>
+		<!-- #endif -->
+		<!-- #ifndef MP-WEIXIN -->
 		<wd-navbar :fixed="true" left-text="返回" @click-left="handleClickLeft" left-arrow :safeAreaInsetTop="true"
 			:custom-class="navbarCustomClass" custom-style="color: red"
 			title="店铺管理"></wd-navbar>
+		<!-- #endif -->
 		<view class="hander" :style="handerStyle">
 			<view class="handerLeft">
 				<image :src="storageShopInfo.img" class="logoIMg" :style="{ width: avatarSize + 'px', height: avatarSize + 'px' }" mode=""></image>
@@ -17,7 +28,7 @@
 						<image src="@/static/shop/elm_002.png" v-if="payParams.shoptype == 2 || payParams.shoptype == 5"></image>
 						<image src="https://p0.meituan.net/shangouproductapi/2d32bf9149d3004cb0a01f2ca6465e6e107072.png" v-if="payParams.shoptype == 6" style="width: 30rpx; height: 30rpx; margin-right: 10rpx;"></image>
 						<view class="shop-name">
-							{{ storageShopInfo.name }}
+							{{ storageShopInfo.name || '店铺加载中...' }}
 						</view>
 					</view>
 					<image v-if="showSet" src="@/static/shop/icon_017a.png" class="setting" @click="openSetting">
@@ -34,12 +45,17 @@
 				</view>
 			</view>
 		</view>
-		<view class="shop-msg">
+		<view class="shop-msg" :class="{'shop-msg--mp': true}">
+			<view class="shop-msg__top">
+			<!-- #ifndef MP-WEIXIN -->
 			<view ref="goShopBtnRef" class="go-shop" :class="{'is-elm-shop': payParams.shoptype == 2 || payParams.shoptype == 5, 'is-jd-shop': payParams.shoptype == 6}" v-if="payParams.shoptype >= 1 && payParams.shoptype <= 9" @click="goShop">进入后台</view>
-			<view class="shopId">门店ID {{ office_id }}</view>
+			<!-- #endif -->
+			<view class="shopId">门店ID {{ office_id || storageShopInfo.office_id || storageShopInfo.id || '—' }}</view>
+			</view>
+			<view class="shop-msg__bottom">
 			<view class="address">
 				<image src="@/static/shop/icon_016a.png"></image>
-				{{ storageShopInfo.city }}
+				{{ storageShopInfo.city || '—' }}
 			</view>
 			<view class="shopSq" v-if="storageShopInfo.state === 3">
 				<view class="sqText">授权异常</view>
@@ -48,6 +64,7 @@
 			<view class="shopSq" v-else>
 				<image src="@/static/shop/icon_018a.png"></image>
 				授权正常
+			</view>
 			</view>
 		</view>
 		<template v-if="showStoreOperatingHighlight">
@@ -139,7 +156,7 @@
 		<!---全功能购买-->
 		<wd-popup v-model="authGoodsVisible" position="bottom" :safe-area-inset-bottom="true"
 			closable @close="handleClose">
-			<SettingPopupPlanContent :is-full-popup-plan="isFullPopupPlan" :isV2="false" :auth-goods-list="payList"
+			<SettingPopupPlanContent v-if="authGoodsVisible" :is-full-popup-plan="isFullPopupPlan" :isV2="false" :auth-goods-list="payList"
 				:shopId="shopId" :shopType="payParams.shoptype" :priceTitle="payParams.pricetitle"
 				:currentFuncCode="payParams.currentFuncCode"
 				@close-popup="closeAuthGoodsVisibleHandler" @set-endtime="setendtime" @success="subscribe"
@@ -149,7 +166,7 @@
 			<view class="pop-title">店铺设置</view>
 			<view class="pop-main">
 				<view class="bin-num">
-					当前绑定人数：<text>{{ settingData.BindList.length }}人</text>
+					当前绑定人数：<text>{{ (settingData.BindList || []).length }}人</text>
 					<image src="@/static/shop/icon_019a.png" class="que-img" @click="openAboutBind"></image>
 				</view>
 				<view class="pop-table">
@@ -159,7 +176,7 @@
 						<view class="header-row-3">操作</view>
 					</view>
 					<view class="table-main">
-						<view class="table-item" v-for="item in settingData.BindList" :key="item.id">
+						<view class="table-item" v-for="item in (settingData.BindList || [])" :key="item.id">
 							<view class="header-row-1">{{ item.user_name }}</view>
 							<view class="header-row-2">{{ item.id }}</view>
 							<view class="header-row-3 header-row-4" :class="{'header-row-5': payParams.shoptype == 2 || payParams.shoptype == 5, 'header-row-6': payParams.shoptype == 6}"
@@ -276,10 +293,16 @@
 		ManagementApi
 	} from '@/api/management.ts'
 	import {
+		FunctionPriceApi
+	} from '@/api/functionPrice.ts'
+	import {
 		ShopApi
 	} from '@/api/shop.ts'
 	import { getRenewQuoteList } from '@/api/pay'
 	import { mapPayQuoteToSpecRow } from '@/utils/payRenewFlow'
+	import { navigateToMpAddShop, openMerchantPortalOnMp } from '@/utils/mpAddShop'
+	import manageCard from '@/components/manageCard.vue'
+	import SettingPopupPlanContent from '@/components/SettingPopupPlanContent.vue'
 	import {
 		useAuthStore
 	} from '@/store/auth.ts'
@@ -295,8 +318,13 @@
 	const isFullPopupPlan = ref(false)
 	const authGoodsVisible = ref(false)
 	let functionList = ref([])
-	/** 「经营数据」整块 + 「亮点功能」整块；设为 true 恢复展示 */
+	/** 「经营数据」整块 + 「亮点功能」整块；小程序展示门店推送入口 */
+	// #ifdef MP-WEIXIN
+	const showStoreOperatingHighlight = ref(true)
+	// #endif
+	// #ifndef MP-WEIXIN
 	const showStoreOperatingHighlight = ref(false)
+	// #endif
 	/** 经营数据中「推广消耗」「推广余额」整块；临时关闭，改为 true 可恢复展示 */
 	const showBusinessPromotionTiles = ref(false)
 	const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
@@ -366,6 +394,11 @@
 	const goShopBtnRef = ref(null)
 	const avatarSize = ref(20)
 	const handerStyle = computed(() => {
+		// #ifdef MP-WEIXIN
+		return {
+			marginTop: 'calc(' + systemBarHeight.value + 'px + 44px)'
+		}
+		// #endif
 		return {
 			marginTop: 'calc(' + systemBarHeight.value + 'px + 44px)'
 		}
@@ -472,6 +505,12 @@
 				return
 			}
 			
+			// #ifdef MP-WEIXIN
+			uni.hideLoading()
+			openMerchantPortalOnMp(getShopTypeNum())
+			return
+			// #endif
+
 			// 使用获取到的cookie打开店铺后台
 		isRepair.value = false
 			// 将cookie保存到 storageShopInfo 中，供 open_web 使用
@@ -510,6 +549,11 @@
 		}
 	}
 	const open_web = () => {
+		// #ifdef MP-WEIXIN
+		uni.hideLoading()
+		openMerchantPortalOnMp(getShopTypeNum())
+		return
+		// #endif
 		let cookie = storageShopInfo.cookies || ''
 		const shopType = getShopTypeNum()
 		
@@ -2012,6 +2056,10 @@
 	}
 	const repair = () => {
 		isRepair.value = true
+		// #ifdef MP-WEIXIN
+		navigateToMpAddShop(Number(payParams.shoptype) || 1, true)
+		return
+		// #endif
 		addShop()
 	}
 	const addConfirm = () => {
@@ -2098,6 +2146,11 @@
 			}, 500)
 		}, 500)
 		// #endif
+		// #ifndef H5
+		// #ifndef APP-PLUS
+		navigateToMpAddShop(Number(payParams.shoptype) || 1, isRepair.value)
+		// #endif
+		// #endif
 	}
 	const eleme = () => {
 		// #ifdef H5
@@ -2166,8 +2219,17 @@
 			}, 500)
 		}, 500)
 		// #endif
+		// #ifndef H5
+		// #ifndef APP-PLUS
+		navigateToMpAddShop(Number(payParams.shoptype) || 1, isRepair.value)
+		// #endif
+		// #endif
 	}
 	const addShop = () => {
+		// #ifdef MP-WEIXIN
+		navigateToMpAddShop(Number(payParams.shoptype) || 1, isRepair.value)
+		return
+		// #endif
 		if (payParams.shoptype == 1) {
 			meituan()
 		} else {
@@ -2271,23 +2333,45 @@
 		aboutShopState.value = false
 	}
 	const getSysteminfo = () => {
+		try {
+			const win = uni.getWindowInfo?.()
+			if (win?.statusBarHeight != null) {
+				systemBarHeight.value = win.statusBarHeight
+				return
+			}
+		} catch (e) {
+			// ignore
+		}
 		uni.getSystemInfo({
 			success: res => {
-				systemBarHeight.value = res.statusBarHeight;
+				systemBarHeight.value = res.statusBarHeight || 0
 			}
-		});
+		})
 	}
 	const closeSetting = () => {
 		shopSettingState.value = false
 	}
-	let settingData = ref({})
+	let settingData = ref({
+		BindList: [],
+		auto_fix: false,
+		shop_user: '',
+		shop_pwd: ''
+	})
 	const openSetting = () => {
 		uni.showLoading({})
 		ShopApi.getShopBindInfo({
 			shop: shopId.value
 		}).then(res => {
-			if (res.code === 200) {
-				settingData.value = res.data
+			const payload = res?.data ?? res?.Data ?? res
+			if (res?.code === 200 || res?.Success || payload) {
+				settingData.value = {
+					BindList: [],
+					auto_fix: false,
+					shop_user: '',
+					shop_pwd: '',
+					...(payload && typeof payload === 'object' ? payload : {}),
+					BindList: Array.isArray(payload?.BindList) ? payload.BindList : []
+				}
 				shopSettingState.value = true
 			}
 		}).finally(() => {
@@ -2423,28 +2507,33 @@
 		if (storageShopInfo && storageShopInfo.work_time) {
 			WorkTimeList.value = storageShopInfo.work_time
 		}
-		// setCookiesFromQueryString(storageShopInfo.cookies)
-		// 只有美团和饿了么需要解析cookies获取运营数据，京东暂时不需要
+		// #ifndef MP-WEIXIN
+		// 小程序无法稳定请求美团/饿了么域外运营接口，跳过以免拖慢页面
 		if (storageShopInfo.cookies && (payParams.shoptype == 1 || payParams.shoptype == 2 || payParams.shoptype == 5)) {
-		strObj.value = parseCookies(storageShopInfo.cookies)
-		getOperateData(strObj.value)
+			strObj.value = parseCookies(storageShopInfo.cookies)
+			getOperateData(strObj.value)
 		}
+		// #endif
 		
-		// 当页面显示时，重新获取功能列表以确保数据是最新的
-		// 这样可以确保从店铺列表页面设置功能开关后，进入店铺管理页面时能看到最新状态
-		// 使用 nextTick 确保 shopId 已经正确设置
-		if (shopId.value) {
+		// 首次进入由 onLoad 拉取；从子页返回时再刷新
+		if (shopId.value && pageShownOnce) {
 			nextTick(() => {
 				getShopManagement(shopId.value)
 			})
 		}
+		pageShownOnce = true
 	})
 
 	const strObj = ref('')
 	const userId = ref('')
+	let pageShownOnce = false
 	onLoad((options) => {
 		getSysteminfo()
 		userId.value = authStore.getUserId
+		const cachedShop = uni.getStorageSync('shopInfo')
+		if (cachedShop) {
+			Object.assign(storageShopInfo, cachedShop)
+		}
 		if (options && options.id) {
 			// 处理参数值，如果是字符串形式（可能是JSON编码的），需要解析
 			const parseValue = (val) => {
@@ -2466,6 +2555,10 @@
 			shopId.value = parseValue(options.id)
 			office_id.value = parseValue(options.office_id)
 			payParams.shoptype = parseValue(options.type)
+
+			const shopTypeNum = Number(payParams.shoptype) || 1
+			functionList.value = getDefaultFunctionList(shopTypeNum, storageShopInfo.func_enable || storageShopInfo.func_info || [])
+			heighLightList.value = buildHighlightList(shopTypeNum)
 			
 			if (options.isV2) {
 				try {
@@ -2487,14 +2580,15 @@
 			// 确保storageShopInfo已经加载后再调用getShopManagement
 			// 如果onShow还没执行，等待一下
 			if (!storageShopInfo.id) {
-				// 从本地存储中获取数据（以防onShow还未执行）
 				const shopInfo = uni.getStorageSync('shopInfo');
 				if (shopInfo) {
 					Object.assign(storageShopInfo, shopInfo);
 				}
 			}
-			
-			getShopManagement(shopId.value)
+
+			loadShopProfile(shopId.value).finally(() => {
+				getShopManagement(shopId.value)
+			})
 			// if (func_enable) {
 			// // 	shopDetails.value = params
 			// 	const APPDATA = func_enable.filter(item => item.code === 'APPDATA')[0]
@@ -2533,12 +2627,14 @@
 	})
 
 	onMounted(() => {
-		// 获取"进入后台"按钮宽度，设置头像尺寸
+		// 获取头像尺寸（小程序无「进入后台」按钮时用默认尺寸）
 		setTimeout(() => {
 			nextTick(() => {
 				uni.createSelectorQuery().select('.go-shop').boundingClientRect((data) => {
 					if (data && data.width) {
 						avatarSize.value = data.width
+					} else {
+						avatarSize.value = 40
 					}
 				}).exec()
 			})
@@ -2642,10 +2738,12 @@
 			},
 			success: (res) => {
 				if (res.data.code === 0) {
-					let currentDateList = res.data.data.list
-					comment.favorable = currentDateList[currentDateList.length - 1].fiveNum +
-						currentDateList[currentDateList.length - 1].fourNum
-					comment.mid = currentDateList[currentDateList.length - 1].threeNum
+					let currentDateList = res.data.data?.list
+					if (Array.isArray(currentDateList) && currentDateList.length > 0) {
+						const last = currentDateList[currentDateList.length - 1]
+						comment.favorable = (last.fiveNum || 0) + (last.fourNum || 0)
+						comment.mid = last.threeNum || 0
+					}
 				} else {
 					if (hpTime.value < 2) {
 						setTimeout(() => {
@@ -3225,23 +3323,59 @@
 	
 	// 工具函数：获取最新的功能启用状态
 	const getLatestFuncEnable = async (id) => {
-		// 优先使用从列表页传递过来的 func_enable（这是最新的状态）
 		if (storageShopInfo.func_enable && Array.isArray(storageShopInfo.func_enable) && storageShopInfo.func_enable.length > 0) {
 			return storageShopInfo.func_enable
 		}
-		
-		// 如果列表页没有传递数据，才调用 API 获取
+		if (storageShopInfo.func_info && Array.isArray(storageShopInfo.func_info) && storageShopInfo.func_info.length > 0) {
+			return storageShopInfo.func_info
+		}
+
 		try {
 			const shopDetailsRes = await ShopApi.getShopDetails(id)
-			if (shopDetailsRes && shopDetailsRes.code === 200 && shopDetailsRes.data && shopDetailsRes.data.func_enable) {
-				const funcEnable = shopDetailsRes.data.func_enable
+			const payload = shopDetailsRes?.data ?? shopDetailsRes?.Data ?? shopDetailsRes
+			const funcEnable = payload?.func_enable ?? payload?.func_info
+			if (Array.isArray(funcEnable) && funcEnable.length > 0) {
 				storageShopInfo.func_enable = funcEnable
 				return funcEnable
 			}
 		} catch (e) {
-			// API 调用失败，返回空数组
+			// ignore
 		}
 		return []
+	}
+
+	const loadShopProfile = async (id) => {
+		const cached = uni.getStorageSync('shopInfo')
+		if (cached) {
+			Object.assign(storageShopInfo, cached)
+		}
+		if (office_id.value) {
+			storageShopInfo.office_id = office_id.value
+		}
+		if (storageShopInfo.name && storageShopInfo.img) return
+
+		try {
+			const res = await ShopApi.getShopDetails(id)
+			const payload = res?.data ?? res?.Data ?? res
+			if (payload && typeof payload === 'object') {
+				Object.assign(storageShopInfo, {
+					name: payload.name ?? payload.shop_name ?? storageShopInfo.name,
+					img: payload.img ?? payload.logo ?? storageShopInfo.img,
+					city: payload.city ?? storageShopInfo.city,
+					state: payload.state ?? storageShopInfo.state,
+					cookies: payload.cookies ?? storageShopInfo.cookies,
+					work_time: payload.work_time ?? storageShopInfo.work_time,
+					func_enable: payload.func_enable ?? payload.func_info ?? storageShopInfo.func_enable,
+					office_id: office_id.value || payload.office_id || storageShopInfo.office_id,
+					id: storageShopInfo.id || id
+				})
+				if (storageShopInfo.work_time) {
+					WorkTimeList.value = storageShopInfo.work_time
+				}
+			}
+		} catch (e) {
+			// ignore
+		}
 	}
 	
 	// 工具函数：匹配功能状态
@@ -3293,6 +3427,76 @@
 		}
 	]
 	
+	const FUNC_NAME_BY_CODE = {
+		ZDCC: '自动出餐',
+		IMZDHF: 'IM自动回复',
+		ZDHP: '自动回评',
+		ZDTG: '智能推广',
+		PJSS: '评价申诉'
+	}
+
+	const extractResponseList = (res) => {
+		if (!res) return []
+		if (Array.isArray(res)) return res
+		const direct = res.data ?? res.Data ?? res.rows ?? res.list
+		if (Array.isArray(direct)) return direct
+		if (direct && typeof direct === 'object') {
+			const nested = direct.data ?? direct.Data ?? direct.rows ?? direct.list
+			if (Array.isArray(nested)) return nested
+		}
+		return []
+	}
+
+	const normalizeFuncCode = (item) => String(item?.code ?? item?.Code ?? '').toUpperCase()
+
+	const normalizeFuncRow = (item, latestFuncEnable) => {
+		const code = normalizeFuncCode(item)
+		const func = latestFuncEnable?.find((i) => normalizeFuncCode(i) === code)
+		const endTime = func?.end_time || func?.EndTime || item.end_time || item.EndTime || ''
+		return {
+			...item,
+			code,
+			name: item.name || item.func_name || item.FuncName || FUNC_NAME_BY_CODE[code] || code,
+			enable: func ? (func.enable !== undefined ? func.enable : false) : (item.enable ?? false),
+			end_time: endTime,
+			id: func?.id || func?.Id || item.id || item.Id || null
+		}
+	}
+
+	const getDefaultFunctionList = (shopTypeNum, latestFuncEnable) => {
+		const codes = shopTypeNum === 1
+			? ['ZDCC', 'IMZDHF', 'ZDHP', 'ZDTG', 'PJSS']
+			: ['ZDCC', 'IMZDHF', 'ZDHP']
+		const nameMap = {
+			ZDCC: '自动出餐',
+			IMZDHF: 'IM自动回复',
+			ZDHP: '自动回评',
+			ZDTG: '智能推广',
+			PJSS: '评价申诉'
+		}
+		return codes.map((code) => {
+			const func = latestFuncEnable?.find((i) => normalizeFuncCode(i) === code)
+			return {
+				code,
+				name: nameMap[code] || code,
+				enable: func?.enable !== undefined ? func.enable : false,
+				end_time: func?.end_time || func?.EndTime || '',
+				id: func?.id || func?.Id || null
+			}
+		})
+	}
+
+	const buildHighlightList = (shopTypeNum) => {
+		const supportedWxPushShopTypes = [1, 3, 6]
+		if (!supportedWxPushShopTypes.includes(shopTypeNum)) return []
+		return [{
+			path: '/pages/wx-push/wx-push',
+			img: '/static/shop/icon_051a.png',
+			name: '门店推送',
+			code: 'WXPUSH'
+		}]
+	}
+
 	const getShopManagement = async (id) => {
 		functionList.value = []
 		heighLightList.value = []
@@ -3314,132 +3518,52 @@
 			// 其他平台：正常调用后端接口
 			const latestFuncEnable = await getLatestFuncEnable(id)
 
-		const data = await ManagementApi.getShopFuncList({
-			shopType: payParams.shoptype
-		})
-			
-			if (!data || !data.data) {
+			const shopTypeForApi = Number(payParams.shoptype) || shopTypeNum
+			let allListCopy = []
+			try {
+				const res = await FunctionPriceApi.getFuncList(shopTypeForApi)
+				allListCopy = extractResponseList(res)
+			} catch (e) {
+				try {
+					const res2 = await ManagementApi.getShopFuncList({ shopType: shopTypeForApi })
+					allListCopy = extractResponseList(res2)
+				} catch (e2) {
+					allListCopy = []
+				}
+			}
+
+			if (!Array.isArray(allListCopy) || allListCopy.length === 0) {
+				functionList.value = getDefaultFunctionList(shopTypeNum, latestFuncEnable)
+				heighLightList.value = buildHighlightList(shopTypeNum)
 				return
 			}
 			
-		let allListCopy = data.data;
-
-		const allList = allListCopy.map((item) => {
-			const func = latestFuncEnable?.find(i => i.code === item.code)
-			if (func) {
-				return {
-					...item,
-					enable: func.enable !== undefined ? func.enable : false,
-					end_time: func.end_time || item.end_time || '',
-					id: func.id || item.id || null
-				}
-			}
-			// 如果没有找到，使用默认值
-			return {
-				...item,
-				enable: false,
-				end_time: item.end_time || '',
-				id: item.id || null
-			}
-		})
-		// 定义功能显示顺序（出餐、自动回复、自动回评、智能推广、评价申诉）
+		const allList = allListCopy.map((item) => normalizeFuncRow(item, latestFuncEnable))
 		const funcDisplayOrder = ["ZDCC", "IMZDHF", "ZDHP", "ZDTG", "PJSS"]
 		
-		// 从 allList 中筛选出支持的功能，并按照定义的顺序排列
-		// 只显示 allList 中实际存在的功能（API 已经根据店铺类型过滤过了）
-		functionList.value = funcDisplayOrder
-			.map(code => allList.find(f => f.code === code))
-			.filter(item => item !== undefined) // 只保留存在的功能，不显示不支持的功能
-		
-		// allList.forEach(item => {
-		// 	if (item.code === "IMZDHF") {
-		// 		functionList.value[1] = item
-		// 	} else if (item.code === "ZDHP") {
-		// 		functionList.value[2] = item
-		// 	} else if (item.code === "ZDCC") {
-		// 		functionList.value[0] = item
-		// 	} else if (item.code === "ZDTG") {
-		// 		functionList.value[3] = item
-		// 	} else if (item.code === "CPDT") {
-		// 		heighLightList.value.push(item)
-		// 	}
-		// })
-		// 根据店铺类型过滤功能列表
-		// 支持的微信推送的店铺类型：1=美团餐饮, 3=美团闪购, 6=京东到家
-		// 不支持的店铺类型：2=淘宝闪购外卖, 4=美团医药, 5=淘宝闪购零售, 7=抖音即时零售
-		// shopTypeNum 已在函数开头声明，这里直接使用
-		const supportedWxPushShopTypes = [1, 3, 6]
-		const isWxPushSupported = supportedWxPushShopTypes.includes(shopTypeNum)
-		
-		heighLightList.value = [
-			// 只有支持的店铺类型才显示门店推送卡片
-			...(isWxPushSupported ? [{
-					path: '/pages/wx-push/wx-push',
-					img: "../../static/shop/icon_051a.png",
-					name: '门店推送',
-					code: 'WXPUSH'
-			}] : []),
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_002a.png",
-				name: '店铺复制'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_003a.png",
-				name: '同行店铺复制'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_004a.png",
-				name: '店铺复制'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_005a.png",
-				name: '店铺logo'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_006a.png",
-				name: '店铺招牌'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_007a.png",
-				name: '店铺海报'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_008a.png",
-				name: '门头视频'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_009a.png",
-				name: '商圈分析'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_010a.png",
-				name: '同行店铺调研'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_011a.png",
-				name: '菜品分析'
-			},
-			{
-				path: '/pages/beautify/beautify',
-				img: "../../static/shop/icon_012a.png",
-				name: '经营日报'
-			}
-		]
-		// 仅展示亮点区前 N 项（当前仅可能含「门店推送」）
-		heighLightList.value.length = isWxPushSupported ? 1 : 0
+		let orderedList = funcDisplayOrder
+			.map(code => allList.find(f => normalizeFuncCode(f) === code))
+			.filter(item => item !== undefined)
+
+		if (orderedList.length === 0) {
+			orderedList = allList
+		}
+		if (orderedList.length === 0) {
+			orderedList = getDefaultFunctionList(shopTypeNum, latestFuncEnable)
+		}
+		functionList.value = orderedList
+		heighLightList.value = buildHighlightList(shopTypeNum)
 		} catch (error) {
+			const shopTypeNum = Number(payParams.shoptype) || 0
+			try {
+				const latestFuncEnable = await getLatestFuncEnable(id)
+				functionList.value = getDefaultFunctionList(shopTypeNum, latestFuncEnable)
+			} catch (e) {
+				functionList.value = getDefaultFunctionList(shopTypeNum, [])
+			}
+			heighLightList.value = buildHighlightList(shopTypeNum)
 			uni.showToast({
-				title: '获取功能列表失败',
+				title: '功能列表加载异常，已显示默认可用功能',
 				icon: 'none',
 				duration: 2000
 			})
@@ -3502,6 +3626,10 @@
 	}
 
 	const handleClickLeft = () => {
+		// #ifdef MP-WEIXIN
+		uni.navigateBack({ delta: 1 })
+		return
+		// #endif
 		if (isV2.value) {
 			// 使用 navigateBack 返回到上一页，保持滚动位置
 			uni.navigateBack({
@@ -3687,7 +3815,40 @@
 		width: 100%;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
+		align-items: stretch;
+		padding-bottom: 40rpx;
+		box-sizing: border-box;
+
+		.mp-nav {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			z-index: 1000;
+			background: #ffc402;
+
+			&__inner {
+				height: 44px;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 0 24rpx;
+			}
+
+			&__back,
+			&__title {
+				font-size: 30rpx;
+				color: #333;
+			}
+
+			&__title {
+				font-weight: 600;
+			}
+
+			&__placeholder {
+				width: 80rpx;
+			}
+		}
 
 		.hander {
 			width: 100%;
@@ -3902,7 +4063,7 @@
 						flex-direction: column;
 						align-items: center;
 						justify-content: center;
-						background: url("@/static/shop/item-bg-mt.png") no-repeat;
+						background: url("/static/shop/item-bg-mt.png") no-repeat;
 						background-size: 100% 100%;
 						overflow: hidden;
 
@@ -3922,7 +4083,7 @@
 					}
 
 					.is-elm-box {
-						background: url("@/static/shop/item-bg-elm.png") no-repeat;
+						background: url("/static/shop/item-bg-elm.png") no-repeat;
 						background-size: 100% 100%;
 
 						.itemText,
@@ -4084,12 +4245,25 @@
 
 	.shop-msg {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
+		flex-direction: column;
 		width: 100%;
 		box-sizing: border-box;
 		padding: 0 30rpx 16px;
 		border-bottom: 1px solid #E7E7E7;
+		gap: 12rpx;
+
+		&__top,
+		&__bottom {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			width: 100%;
+		}
+
+		&--mp {
+			margin-top: 8rpx;
+		}
 
 		.go-shop {
 			display: inline-block;

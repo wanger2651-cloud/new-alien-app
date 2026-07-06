@@ -384,7 +384,23 @@
 	const internalPayList = ref([])
 	// 规格加载状态（用于避免高度闪烁）
 	const isSpecLoading = ref(false)
-	const loadSpecs = async (type, funcCode = '') => {
+
+	const applyPreloadedSpecs = (list) => {
+		if (!list || !Array.isArray(list) || list.length === 0) {
+			return false
+		}
+		internalPayList.value = list.map((x) => normalizeSpecRow(x)).filter(Boolean)
+		if (internalPayList.value.length === 0) {
+			return false
+		}
+		curPlan.value = 0
+		const firstItem = internalPayList.value[0]
+		currentCost.value = firstItem.cost || 0
+		currentId.value = firstItem.price_id || ''
+		return true
+	}
+
+	const loadSpecs = async (type, funcCode = '', options = {}) => {
 		if (!props.shopType) return
 		
 		try {
@@ -424,10 +440,12 @@
 						curPlan.value = 0
 						currentCost.value = 0
 						currentId.value = ''
-						uni.showToast({
-							title: '未获取到可用规格',
-							icon: 'none'
-						})
+						if (!options.silentEmpty) {
+							uni.showToast({
+								title: '该功能暂无可购规格，请联系客服',
+								icon: 'none'
+							})
+						}
 					}
 					return
 				}
@@ -490,10 +508,12 @@
 				currentCost.value = firstItem.cost || 0
 				currentId.value = firstItem.price_id || ''
 			} else {
-				uni.showToast({
-					title: '未获取到可用规格',
-					icon: 'none'
-				})
+				if (!options.silentEmpty) {
+					uni.showToast({
+						title: '该功能暂无可购规格，请联系客服',
+						icon: 'none'
+					})
+				}
 			}
 		} catch (err) {
 			console.error('加载规格失败:', err)
@@ -559,11 +579,10 @@
 		return processedGoodsList.value[index] || processedGoodsList.value[0] || null
 	})
 	
-	// 监听店铺类型变化，重新获取功能列表
+	// 监听店铺类型变化，重新获取功能列表（弹窗打开后才挂载）
 	watch(() => props.shopType, (newType) => {
 		if (newType) {
 			const shopTypeNum = Number(newType)
-			// 京东团购（10 或 1001）和美团团购（9 或 1000）不调用后端接口
 			if (shopTypeNum === 9 || shopTypeNum === 10 || shopTypeNum === 1000 || shopTypeNum === 1001) {
 				return
 			}
@@ -593,6 +612,11 @@
 				currentCost.value = cur.cost || 0
 				currentId.value = cur.price_id || ''
 			}
+			return
+		}
+		// 父组件已预加载的单功能续费规格（如门店列表页开关续费）
+		if (props.currentFuncCode && newList && Array.isArray(newList) && newList.length > 0) {
+			applyPreloadedSpecs(newList)
 		}
 	}, { immediate: true })
 	
@@ -602,6 +626,9 @@
 			// 续费操作：设置为单功能激活，只显示当前功能的规格
 			activateType.value = 'single'
 			selectedFuncCode.value = newCode
+			if (applyPreloadedSpecs(props.authGoodsList)) {
+				return
+			}
 			loadSpecs('single', newCode)
 		}
 	}, { immediate: false })
@@ -652,6 +679,9 @@
 		if (props.currentFuncCode) {
 			activateType.value = 'single'
 			selectedFuncCode.value = props.currentFuncCode
+			if (applyPreloadedSpecs(props.authGoodsList)) {
+				return
+			}
 			loadSpecs('single', props.currentFuncCode)
 			return
 		}
@@ -689,14 +719,7 @@
 	
 	onMounted(() => {
 		loadRenewChannels()
-		if (props.shopType) {
-			const shopTypeNum = Number(props.shopType)
-			// 京东团购（10 或 1001）和美团团购（9 或 1000）不调用后端接口
-			if (shopTypeNum !== 9 && shopTypeNum !== 10 && shopTypeNum !== 1000 && shopTypeNum !== 1001) {
-				getFuncList()
-			}
-		}
-		
+		// 规格仅在续费弹窗打开时加载（父组件 v-if 控制挂载），避免门店列表页误弹 toast
 		initSpecs()
 	})
 	

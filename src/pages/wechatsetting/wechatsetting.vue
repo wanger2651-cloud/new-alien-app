@@ -4,7 +4,7 @@
 		<!-- 全屏海报展示：不留边距，效果与店铺复制海报一致 -->
 		<view class="poster-wrap" :style="{paddingTop: (systemBarHeight + 44 - 80) + 'px'}">
 			<!-- uni-app 静态资源：用静态 src，避免字符串 alias 无法解析 -->
-			<image src="@/static/img/wechatpush.png" class="poster-img" mode="widthFix"></image>
+			<image src="@/static/img/juhekfu-Poster-sm.jpg" class="poster-img" mode="widthFix"></image>
 		</view>
 
 		<!-- 底部操作区：机器人管理和推送内容设置按钮 -->

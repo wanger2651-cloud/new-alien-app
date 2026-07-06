@@ -3,6 +3,7 @@
 		<view class="top-bar" :style="{ paddingTop: (systemBarHeight + 8) + 'px' }" @tap="handleClickLeft">
 			<text class="back-text">‹ 返回上一页</text>
 		</view>
+		<image class="login-logo" src="/static/brand/mp-login-logo.png" mode="aspectFit" />
 		<view class="textOne">HI～ 您好！</view>
 		<view class="textTwo">欢迎登录青柠助手{{pageText}}</view>
 		<view class="login-card">
@@ -1018,6 +1019,13 @@
 			font-size: 30rpx;
 			color: #333;
 			line-height: 48rpx;
+		}
+
+		.login-logo {
+			display: block;
+			width: 160rpx;
+			height: 160rpx;
+			margin: 12rpx auto 8rpx;
 		}
 
 		.textOne {

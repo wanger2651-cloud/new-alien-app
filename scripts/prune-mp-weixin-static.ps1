@@ -11,12 +11,16 @@ $static = Join-Path $DistDir "static"
 if (-not (Test-Path -LiteralPath $static)) { exit 0 }
 
 $allow = @(
-    "choose/phone.png", "choose/mima.png", "choose/ids.png", "choose/yy.png", "choose/choose-bg.png",
+    "choose/phone.png", "choose/mima.png", "choose/ids.png", "choose/yy.png", "choose/choose-bg.png", "choose/app-logo.png",
+    "brand/mp-login-logo.png",
     "store/add_icon.png", "store/bind_icon.png", "store/del_icon.png", "store/shaix_icon.png",
     "icon/icon_copy.png", "icon/icon_down.png", "icon/icon_edit.png", "icon/icon_add.png", "icon/icon_delete.png",
     "user/userBg_001.png", "user/jihu-logo.png", "user/kf.png",
     "img/juhekfu-Poster-sm.jpg", "img/juhekfu-logo-sm.jpg", "img/bind-sm.jpg", "img/robotonline.png", "img/yesterdays-review.png",
-    "shop/icon_016a.png", "shop/icon_037a.png", "shop/icon_036a.png", "shop/icon_038a.png", "shop/icon_031a.png",
+    "shop/icon_019a.png", "shop/im_bg_001.png", "shop/toIcon.png", "shop/wh.png", "shop/server-gth.png", "shop/default.png",
+    "user/close.png", "user/add-img.png", "user/icon-arrow-right.png",
+    "shop/icon_016a.png", "shop/icon_017a.png", "shop/icon_018a.png", "shop/icon_037a.png", "shop/icon_036a.png", "shop/icon_038a.png", "shop/icon_031a.png",
+    "shop/mt_002.png", "shop/elm_002.png",
     "shop/icon_045a.png", "shop/icon_044a.png", "shop/icon_041a.png", "shop/icon_048a.png", "shop/icon_051a.png",
     "shop/icon_043a.png", "shop/icon_046a.png", "shop/icon_023a.png", "shop/icon_024a.png", "shop/icon_025a.png",
     "shop/icon_026a.png", "shop/icon_027a.png", "shop/icon_040a.png", "shop/m_info.png",

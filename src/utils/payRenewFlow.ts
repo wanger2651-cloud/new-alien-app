@@ -1,4 +1,4 @@
-import type { t_pay_order } from '@/TsModel/Alien/Module/Pay/Domain/Entities/t_pay_order'
+import { openExternalUrl } from '@/utils/openExternalUrl'
 import { PayOrderStatus } from '@/TsModel/Alien/Module/Pay/Domain/Enums/PayOrderStatus'
 import type { FunctionPriceItemVo } from '@/TsModel/Alien/Module/Pay/Application/Contracts/FunctionPriceItemVo'
 
@@ -126,6 +126,9 @@ export function openExternalPayLink(link: string): void {
 	if (typeof window !== 'undefined') {
 		window.open(url, '_blank')
 	}
+	// #endif
+	// #ifdef MP-WEIXIN
+	openExternalUrl(url, '续费支付')
 	// #endif
 }
 
